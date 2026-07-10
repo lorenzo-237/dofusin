@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+  @keyframes toastIn2 { from { opacity:0; transform: translate(-50%, 8px); } to { opacity:1; transform: translate(-50%, 0); } }
+</style>
+</helmet>
+<div style="width:1180px;height:800px;border-radius:26px;overflow:hidden;background:#EFEAFB;font-family:'Nunito',sans-serif;display:flex;box-shadow:0 20px 60px rgba(43,31,77,0.22);border:3px solid #2B1F4D;position:relative;color:#2B1F4D;">
+
+  <sc-if value="{{ loggedIn }}" hint-placeholder-val="{{ false }}">
+    <div style="width:236px;flex:none;background:#E4D8FB;border-right:3px solid #2B1F4D;display:flex;flex-direction:column;padding:28px 18px;box-sizing:border-box;">
+      <div style="display:flex;align-items:center;gap:10px;padding:0 10px 24px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#6D4AFF;border:2px solid #2B1F4D;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;">DD</div>
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:17px;">Dofus-Dispo</div>
+      </div>
+
+      <sc-if value="{{ navIsHome }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goHome }}">Accueil</div>
+      </sc-if>
+      <sc-if value="{{ !navIsHome }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:2px solid transparent;color:#5A4E80;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goHome }}">Accueil</div>
+      </sc-if>
+
+      <sc-if value="{{ navIsCharacters }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goCharacters }}">Mes personnages</div>
+      </sc-if>
+      <sc-if value="{{ !navIsCharacters }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:2px solid transparent;color:#5A4E80;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goCharacters }}">Mes personnages</div>
+      </sc-if>
+
+      <sc-if value="{{ navIsAvailability }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goAvailability }}">Disponibilité</div>
+      </sc-if>
+      <sc-if value="{{ !navIsAvailability }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:2px solid transparent;color:#5A4E80;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goAvailability }}">Disponibilité</div>
+      </sc-if>
+
+      <sc-if value="{{ navIsSearch }}" hint-placeholder-val="{{ false }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goSearch }}">Recherche d'aide</div>
+      </sc-if>
+      <sc-if value="{{ !navIsSearch }}" hint-placeholder-val="{{ true }}">
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;border:2px solid transparent;color:#5A4E80;font-weight:700;margin-bottom:8px;cursor:pointer;" onClick="{{ goSearch }}">Recherche d'aide</div>
+      </sc-if>
+
+      <div style="margin-top:auto;padding-top:14px;border-top:3px solid #2B1F4D;">
+        <div style="padding:0 14px 8px;font-size:12px;color:#5A4E80;">Connecté : <strong style="color:#2B1F4D;">{{ username }}</strong></div>
+        <div style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:12px;color:#FF6F59;font-weight:800;cursor:pointer;" onClick="{{ logout }}">Déconnexion</div>
+      </div>
+    </div>
+
+    <div style="flex:1;overflow-y:auto;padding:40px 48px;box-sizing:border-box;">
+
+      <sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:28px;margin-bottom:4px;">Salut, {{ username }} !</div>
+        <div style="color:#5A4E80;font-size:15px;margin-bottom:28px;">Voici un résumé de ta journée.</div>
+
+        <div style="display:flex;gap:18px;margin-bottom:32px;">
+          <div style="flex:1;background:#fff;border:2px solid #2B1F4D;border-radius:16px;padding:20px 22px;box-shadow:4px 4px 0 rgba(43,31,77,0.15);">
+            <div style="font-size:13px;color:#5A4E80;font-weight:700;">Personnages</div>
+            <div style="font-family:'Fredoka',sans-serif;font-size:32px;font-weight:700;color:#6D4AFF;">{{ charCount }}</div>
+          </div>
+          <div style="flex:1;background:#fff;border:2px solid #2B1F4D;border-radius:16px;padding:20px 22px;box-shadow:4px 4px 0 rgba(43,31,77,0.15);">
+            <div style="font-size:13px;color:#5A4E80;font-weight:700;">Disponible aujourd'hui</div>
+            <div style="font-family:'Fredoka',sans-serif;font-size:32px;font-weight:700;color:#FFC93C;">{{ activeAvailCount }}</div>
+          </div>
+          <div style="flex:1;background:#2BC4B0;border:2px solid #2B1F4D;border-radius:16px;padding:20px 22px;cursor:pointer;box-shadow:4px 4px 0 rgba(43,31,77,0.15);" onClick="{{ goAvailability }}">
+            <div style="font-size:13px;color:#0C4A42;font-weight:700;">Action rapide</div>
+            <div style="font-family:'Fredoka',sans-serif;font-size:18px;font-weight:700;color:#04211C;margin-top:6px;">Me rendre disponible →</div>
+          </div>
+        </div>
+
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:17px;margin-bottom:12px;">Mes disponibilités du jour</div>
+        <sc-if value="{{ hasTodaysAvail }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+            <sc-for list="{{ todaysAvailList }}" as="a" hint-placeholder-count="1">
+              <div style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid #2B1F4D;border-radius:14px;padding:12px 16px;">
+                <div style="width:10px;height:10px;border-radius:50%;background:{{ a.clsColor }};flex:none;"></div>
+                <div style="font-weight:800;flex:1;">{{ a.name }}</div>
+                <div style="color:#5A4E80;font-size:13px;">{{ a.server }} · {{ a.cls }}</div>
+                <div style="font-weight:800;color:#6D4AFF;min-width:80px;text-align:right;">{{ a.priceLabel }}</div>
+              </div>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ !hasTodaysAvail }}" hint-placeholder-val="{{ true }}">
+          <div style="color:#5A4E80;font-size:14px;background:#fff;border:2px dashed #2B1F4D;border-radius:14px;padding:22px;text-align:center;margin-bottom:24px;">Aucun personnage disponible pour l'instant. <span onClick="{{ goAvailability }}" style="color:#6D4AFF;font-weight:800;cursor:pointer;">Rendre un perso disponible</span></div>
+        </sc-if>
+
+        <div onClick="{{ goSearch }}" style="display:inline-block;background:#FFC93C;color:#2B1F4D;border:2px solid #2B1F4D;font-family:'Fredoka',sans-serif;font-weight:700;padding:12px 22px;border-radius:14px;cursor:pointer;box-shadow:3px 3px 0 rgba(43,31,77,0.25);">Chercher de l'aide</div>
+      </sc-if>
+
+      <sc-if value="{{ isCharacters }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;margin-bottom:22px;">Mes personnages</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:24px;">
+          <sc-for list="{{ charactersList }}" as="c" hint-placeholder-count="2">
+            <div style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid #2B1F4D;border-radius:14px;padding:14px 18px;">
+              <div style="width:38px;height:38px;border-radius:10px;background:{{ c.clsColor }};border:2px solid #2B1F4D;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:700;flex:none;">{{ c.initial }}</div>
+              <div style="flex:1;">
+                <div style="font-weight:800;font-size:15px;">{{ c.name }}</div>
+                <div style="color:#5A4E80;font-size:13px;">{{ c.server }} · {{ c.cls }}</div>
+              </div>
+              <div onClick="{{ c.onEdit }}" style="color:#6D4AFF;font-weight:800;font-size:13px;cursor:pointer;padding:8px 12px;">Modifier</div>
+              <div onClick="{{ c.onDelete }}" style="color:#FF6F59;font-weight:800;font-size:13px;cursor:pointer;padding:8px 12px;">Supprimer</div>
+            </div>
+          </sc-for>
+        </div>
+
+        <div style="background:#fff;border:2px solid #2B1F4D;border-radius:16px;padding:22px;max-width:520px;box-shadow:4px 4px 0 rgba(43,31,77,0.15);">
+          <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:16px;margin-bottom:14px;">{{ charFormTitle }}</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <input value="{{ charFormName }}" onChange="{{ onCharFormNameChange }}" placeholder="Nom exact en jeu" style="padding:11px 14px;border-radius:10px;border:2px solid #2B1F4D;font-family:'Nunito',sans-serif;font-size:14px;background:#F6F2FF;" />
+            <select value="{{ charFormServer }}" onChange="{{ onCharFormServerChange }}" style="padding:11px 14px;border-radius:10px;border:2px solid #2B1F4D;font-family:'Nunito',sans-serif;font-size:14px;background:#F6F2FF;">
+              <sc-for list="{{ servers }}" as="s" hint-placeholder-count="6">
+                <option value="{{ s }}">{{ s }}</option>
+              </sc-for>
+            </select>
+            <select value="{{ charFormCls }}" onChange="{{ onCharFormClsChange }}" style="padding:11px 14px;border-radius:10px;border:2px solid #2B1F4D;font-family:'Nunito',sans-serif;font-size:14px;background:#F6F2FF;">
+              <sc-for list="{{ classes }}" as="cl" hint-placeholder-count="6">
+                <option value="{{ cl }}">{{ cl }}</option>
+              </sc-for>
+            </select>
+            <sc-if value="{{ charFormError }}" hint-placeholder-val="{{ false }}">
+              <div style="color:#FF6F59;font-size:13px;font-weight:700;">{{ charFormError }}</div>
+            </sc-if>
+            <div style="display:flex;gap:10px;">
+              <div onClick="{{ submitCharForm }}" style="background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;padding:11px 20px;border-radius:12px;cursor:pointer;box-shadow:3px 3px 0 rgba(43,31,77,0.25);">{{ charFormSubmitLabel }}</div>
+              <sc-if value="{{ isEditingChar }}" hint-placeholder-val="{{ false }}">
+                <div onClick="{{ cancelEditChar }}" style="color:#5A4E80;font-weight:700;padding:11px 16px;border-radius:12px;cursor:pointer;">Annuler</div>
+              </sc-if>
+            </div>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isAvailability }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;margin-bottom:4px;">Gestion des disponibilités</div>
+        <div style="color:#5A4E80;font-size:14px;margin-bottom:22px;">Valable uniquement aujourd'hui — à refaire chaque jour.</div>
+
+        <div style="display:flex;flex-direction:column;gap:14px;">
+          <sc-for list="{{ availList }}" as="av" hint-placeholder-count="2">
+            <div style="background:#fff;border:2px solid #2B1F4D;border-radius:16px;padding:18px 20px;box-shadow:4px 4px 0 rgba(43,31,77,0.12);">
+              <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+                <div style="width:32px;height:32px;border-radius:9px;background:{{ av.clsColor }};border:2px solid #2B1F4D;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:700;font-size:13px;flex:none;">{{ av.initial }}</div>
+                <div style="font-weight:800;flex:1;">{{ av.name }} <span style="color:#5A4E80;font-weight:600;font-size:13px;">· {{ av.server }} · {{ av.cls }}</span></div>
+                <div onClick="{{ av.onToggle }}" style="background:{{ av.toggleBg }};color:{{ av.toggleColor }};border:2px solid #2B1F4D;font-weight:700;font-size:13px;padding:9px 16px;border-radius:999px;cursor:pointer;">{{ av.toggleLabel }}</div>
+              </div>
+              <sc-if value="{{ av.isOn }}" hint-placeholder-val="{{ false }}">
+                <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;padding-top:10px;border-top:2px solid #EDE6FF;">
+                  <input value="{{ av.level }}" onChange="{{ av.onLevelChange }}" placeholder="Niveau" style="width:80px;padding:9px 10px;border-radius:9px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;" />
+                  <input value="{{ av.jobLevel }}" onChange="{{ av.onJobLevelChange }}" placeholder="Niveau métier" style="width:110px;padding:9px 10px;border-radius:9px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;" />
+                  <div onClick="{{ av.onSetFree }}" style="font-size:13px;font-weight:800;cursor:pointer;color:{{ av.freeTextColor }};">● Gratuit</div>
+                  <div onClick="{{ av.onSetPaid }}" style="font-size:13px;font-weight:800;cursor:pointer;color:{{ av.paidTextColor }};">● Payant</div>
+                  <sc-if value="{{ av.showPriceInput }}" hint-placeholder-val="{{ false }}">
+                    <input value="{{ av.price }}" onChange="{{ av.onPriceChange }}" placeholder="Montant (kamas)" style="width:150px;padding:9px 10px;border-radius:9px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;" />
+                  </sc-if>
+                </div>
+              </sc-if>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isSearch }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:26px;margin-bottom:22px;">Recherche d'aides</div>
+
+        <div style="display:flex;gap:12px;flex-wrap:wrap;background:#fff;border:2px solid #2B1F4D;border-radius:16px;padding:18px 20px;margin-bottom:22px;box-shadow:4px 4px 0 rgba(43,31,77,0.12);">
+          <select value="{{ searchServer }}" onChange="{{ onSearchServerChange }}" style="padding:10px 12px;border-radius:10px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;">
+            <option value="">Tous les serveurs</option>
+            <sc-for list="{{ servers }}" as="s" hint-placeholder-count="6">
+              <option value="{{ s }}">{{ s }}</option>
+            </sc-for>
+          </select>
+          <select value="{{ searchCls }}" onChange="{{ onSearchClsChange }}" style="padding:10px 12px;border-radius:10px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;">
+            <option value="">Toutes les classes</option>
+            <sc-for list="{{ classes }}" as="cl" hint-placeholder-count="6">
+              <option value="{{ cl }}">{{ cl }}</option>
+            </sc-for>
+          </select>
+          <input value="{{ searchMinLevel }}" onChange="{{ onSearchMinLevelChange }}" placeholder="Niveau min" style="width:110px;padding:10px 12px;border-radius:10px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;" />
+          <input value="{{ searchMinJob }}" onChange="{{ onSearchMinJobChange }}" placeholder="Métier min" style="width:110px;padding:10px 12px;border-radius:10px;border:2px solid #2B1F4D;font-size:13px;background:#F6F2FF;" />
+        </div>
+
+        <div style="color:#5A4E80;font-size:13px;font-weight:700;margin-bottom:12px;">{{ resultsCountLabel }}</div>
+
+        <div style="display:flex;flex-direction:column;gap:10px;">
+          <sc-for list="{{ searchResults }}" as="r" hint-placeholder-count="3">
+            <div style="display:flex;align-items:center;gap:14px;background:#fff;border:2px solid #2B1F4D;border-radius:14px;padding:14px 18px;">
+              <div style="width:36px;height:36px;border-radius:10px;background:{{ r.clsColor }};border:2px solid #2B1F4D;color:#fff;display:flex;align-items:center;justify-content:center;font-family:'Fredoka',sans-serif;font-weight:700;flex:none;">{{ r.initial }}</div>
+              <div style="flex:1;">
+                <div style="font-weight:800;font-size:15px;">{{ r.name }}</div>
+                <div style="color:#5A4E80;font-size:13px;">{{ r.server }} · {{ r.cls }} · Niv. {{ r.level }} · Métier {{ r.jobLevel }}</div>
+              </div>
+              <div style="font-weight:800;color:#6D4AFF;min-width:70px;">{{ r.priceLabel }}</div>
+              <div onClick="{{ r.onCopy }}" style="background:#FFC93C;color:#2B1F4D;border:2px solid #2B1F4D;font-weight:700;font-size:13px;padding:9px 14px;border-radius:10px;cursor:pointer;">{{ r.copyLabel }}</div>
+            </div>
+          </sc-for>
+        </div>
+      </sc-if>
+
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showAuth }}" hint-placeholder-val="{{ true }}">
+    <div style="margin:auto;width:400px;background:#fff;border:2px solid #2B1F4D;border-radius:20px;padding:36px;box-sizing:border-box;box-shadow:6px 6px 0 rgba(43,31,77,0.18);">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:26px;">
+        <div style="width:38px;height:38px;border-radius:10px;background:#6D4AFF;border:2px solid #2B1F4D;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Fredoka',sans-serif;font-weight:700;">DD</div>
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:19px;">Dofus-Dispo</div>
+      </div>
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:20px;margin-bottom:18px;">Connexion</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <input value="{{ loginUsername }}" onChange="{{ onLoginUsernameChange }}" placeholder="Pseudo" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <input type="password" value="{{ loginPassword }}" onChange="{{ onLoginPasswordChange }}" placeholder="Mot de passe" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <sc-if value="{{ loginError }}" hint-placeholder-val="{{ false }}">
+            <div style="color:#FF6F59;font-size:13px;font-weight:700;">{{ loginError }}</div>
+          </sc-if>
+          <div onClick="{{ handleLogin }}" style="background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;text-align:center;padding:12px;border-radius:12px;cursor:pointer;margin-top:6px;box-shadow:3px 3px 0 rgba(43,31,77,0.25);">Se connecter</div>
+          <div style="text-align:center;font-size:13px;color:#5A4E80;margin-top:8px;">Pas de compte ? <span onClick="{{ goRegister }}" style="color:#6D4AFF;font-weight:800;cursor:pointer;">Créer un compte</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRegStep1 }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:20px;margin-bottom:18px;">Créer un compte</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <input value="{{ regUsername }}" onChange="{{ onRegUsernameChange }}" placeholder="Pseudo" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <input type="password" value="{{ regPassword }}" onChange="{{ onRegPasswordChange }}" placeholder="Mot de passe" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <input type="password" value="{{ regConfirm }}" onChange="{{ onRegConfirmChange }}" placeholder="Confirmer le mot de passe" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <sc-if value="{{ regError }}" hint-placeholder-val="{{ false }}">
+            <div style="color:#FF6F59;font-size:13px;font-weight:700;">{{ regError }}</div>
+          </sc-if>
+          <div onClick="{{ goRegisterStep2 }}" style="background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;text-align:center;padding:12px;border-radius:12px;cursor:pointer;margin-top:6px;box-shadow:3px 3px 0 rgba(43,31,77,0.25);">Continuer</div>
+          <div style="text-align:center;font-size:13px;color:#5A4E80;margin-top:8px;">Déjà un compte ? <span onClick="{{ goLogin }}" style="color:#6D4AFF;font-weight:800;cursor:pointer;">Se connecter</span></div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRegStep2 }}" hint-placeholder-val="{{ false }}">
+        <div style="font-family:'Fredoka',sans-serif;font-weight:700;font-size:20px;margin-bottom:4px;">Ton premier personnage</div>
+        <div style="color:#5A4E80;font-size:13px;margin-bottom:18px;">Obligatoire pour finir l'inscription.</div>
+        <div style="display:flex;flex-direction:column;gap:12px;">
+          <input value="{{ regCharName }}" onChange="{{ onRegCharNameChange }}" placeholder="Nom exact en jeu" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;" />
+          <select value="{{ regCharServer }}" onChange="{{ onRegCharServerChange }}" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;">
+            <sc-for list="{{ servers }}" as="s" hint-placeholder-count="6">
+              <option value="{{ s }}">{{ s }}</option>
+            </sc-for>
+          </select>
+          <select value="{{ regCharCls }}" onChange="{{ onRegCharClsChange }}" style="padding:12px 14px;border-radius:10px;border:2px solid #2B1F4D;font-size:14px;background:#F6F2FF;">
+            <sc-for list="{{ classes }}" as="cl" hint-placeholder-count="6">
+              <option value="{{ cl }}">{{ cl }}</option>
+            </sc-for>
+          </select>
+          <sc-if value="{{ regCharError }}" hint-placeholder-val="{{ false }}">
+            <div style="color:#FF6F59;font-size:13px;font-weight:700;">{{ regCharError }}</div>
+          </sc-if>
+          <div onClick="{{ finishRegister }}" style="background:#6D4AFF;border:2px solid #2B1F4D;color:#fff;font-weight:700;text-align:center;padding:12px;border-radius:12px;cursor:pointer;margin-top:6px;box-shadow:3px 3px 0 rgba(43,31,77,0.25);">Terminer l'inscription</div>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ showToast }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;bottom:26px;left:50%;transform:translateX(-50%);background:#2B1F4D;color:#fff;padding:10px 18px;border-radius:999px;font-size:13px;font-weight:700;animation:toastIn2 0.2s ease;">Commande copiée !</div>
+  </sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const SERVERS = ['Emeraldia', 'Sablonoir', 'Brumeval', 'Écarlate', 'Nordhaven', 'Valorune'];
+const CLASSES = ['Guerrier', 'Mage', 'Archer', 'Soigneur', 'Voleur', 'Barde'];
+const CLASS_COLORS = {
+  Guerrier: '#FF6F59',
+  Mage: '#4A6EF5',
+  Archer: '#2BC4B0',
+  Soigneur: '#FFC93C',
+  Voleur: '#9B59D0',
+  Barde: '#FF5FA2',
+};
+const HELPERS_POOL = [
+  { id: 'h1', name: 'Sör-Belna', server: 'Emeraldia', cls: 'Soigneur', level: 187, jobLevel: 82, price: 0 },
+  { id: 'h2', name: 'Kaal-Rutan', server: 'Sablonoir', cls: 'Guerrier', level: 145, jobLevel: 45, price: 3000 },
+  { id: 'h3', name: 'Mysha-Vent', server: 'Brumeval', cls: 'Mage', level: 200, jobLevel: 100, price: 0 },
+  { id: 'h4', name: 'Doran-Feu', server: 'Emeraldia', cls: 'Archer', level: 120, jobLevel: 60, price: 1500 },
+  { id: 'h5', name: 'Lyss-Ombre', server: 'Nordhaven', cls: 'Voleur', level: 160, jobLevel: 70, price: 0 },
+  { id: 'h6', name: 'Tessa-Lune', server: 'Valorune', cls: 'Barde', level: 90, jobLevel: 30, price: 500 },
+  { id: 'h7', name: 'Grunlek', server: 'Sablonoir', cls: 'Guerrier', level: 210, jobLevel: 95, price: 0 },
+  { id: 'h8', name: 'Ariane-Belle', server: 'Écarlate', cls: 'Soigneur', level: 130, jobLevel: 55, price: 2000 },
+  { id: 'h9', name: 'Fenrix', server: 'Brumeval', cls: 'Mage', level: 175, jobLevel: 88, price: 0 },
+  { id: 'h10', name: 'Coralie-Vive', server: 'Nordhaven', cls: 'Archer', level: 155, jobLevel: 65, price: 1000 },
+];
+
+function initialState() {
+  return {
+    screen: 'login',
+    loginUsername: '', loginPassword: '', loginError: '',
+    regUsername: '', regPassword: '', regConfirm: '', regError: '',
+    regCharName: '', regCharServer: SERVERS[0], regCharCls: CLASSES[0], regCharError: '',
+    loggedIn: false,
+    username: '',
+    characters: [],
+    nextCharId: 1,
+    charFormName: '', charFormServer: SERVERS[0], charFormCls: CLASSES[0], charFormError: '',
+    editingId: null,
+    availabilities: {},
+    search: { server: '', cls: '', minLevel: '', minJob: '' },
+    copiedId: null,
+    toastTimer: null,
+  };
+}
+
+class Component extends DCLogic {
+  state = initialState();
+
+  handleLogin = () => {
+    const { loginUsername, loginPassword } = this.state;
+    if (!loginUsername.trim() || !loginPassword.trim()) {
+      this.setState({ loginError: 'Merci de renseigner ton pseudo et ton mot de passe.' });
+      return;
+    }
+    const demoChars = [
+      { id: 1, name: loginUsername + '-Feca', server: SERVERS[0], cls: 'Soigneur' },
+      { id: 2, name: loginUsername + '-Iop', server: SERVERS[1], cls: 'Guerrier' },
+    ];
+    this.setState({ loggedIn: true, username: loginUsername, characters: demoChars, nextCharId: 3, screen: 'home', loginError: '' });
+  };
+
+  logout = () => { this.state = initialState(); this.forceUpdate(); };
+
+  goLogin = () => this.setState({ screen: 'login', regError: '', loginError: '' });
+  goRegister = () => this.setState({ screen: 'register-1', regError: '' });
+  goRegisterStep2 = () => {
+    const { regUsername, regPassword, regConfirm } = this.state;
+    if (!regUsername.trim() || !regPassword.trim()) { this.setState({ regError: 'Pseudo et mot de passe requis.' }); return; }
+    if (regPassword !== regConfirm) { this.setState({ regError: 'Les mots de passe ne correspondent pas.' }); return; }
+    this.setState({ screen: 'register-2', regError: '' });
+  };
+  finishRegister = () => {
+    const { regCharName, regCharServer, regCharCls, regUsername } = this.state;
+    if (!regCharName.trim()) { this.setState({ regCharError: 'Le nom du personnage est requis.' }); return; }
+    const char = { id: 1, name: regCharName, server: regCharServer, cls: regCharCls };
+    this.setState({ loggedIn: true, username: regUsername, characters: [char], nextCharId: 2, screen: 'home', regCharError: '' });
+  };
+
+  goHome = () => this.setState({ screen: 'home' });
+  goCharacters = () => this.setState({ screen: 'characters', editingId: null, charFormName: '', charFormServer: SERVERS[0], charFormCls: CLASSES[0], charFormError: '' });
+  goAvailability = () => this.setState({ screen: 'availability' });
+  goSearch = () => this.setState({ screen: 'search' });
+
+  submitCharForm = () => {
+    const { charFormName, charFormServer, charFormCls, editingId, characters, nextCharId } = this.state;
+    if (!charFormName.trim()) { this.setState({ charFormError: 'Le nom du personnage est requis.' }); return; }
+    if (editingId != null) {
+      this.setState({
+        characters: characters.map(c => c.id === editingId ? { ...c, name: charFormName, server: charFormServer, cls: charFormCls } : c),
+        editingId: null, charFormName: '', charFormServer: SERVERS[0], charFormCls: CLASSES[0], charFormError: '',
+      });
+    } else {
+      this.setState({
+        characters: [...characters, { id: nextCharId, name: charFormName, server: charFormServer, cls: charFormCls }],
+        nextCharId: nextCharId + 1, charFormName: '', charFormServer: SERVERS[0], charFormCls: CLASSES[0], charFormError: '',
+      });
+    }
+  };
+  editCharacter = (c) => this.setState({ editingId: c.id, charFormName: c.name, charFormServer: c.server, charFormCls: c.cls, charFormError: '' });
+  cancelEditChar = () => this.setState({ editingId: null, charFormName: '', charFormServer: SERVERS[0], charFormCls: CLASSES[0], charFormError: '' });
+  deleteCharacter = (id) => {
+    const availabilities = { ...this.state.availabilities };
+    delete availabilities[id];
+    this.setState({ characters: this.state.characters.filter(c => c.id !== id), availabilities });
+  };
+
+  toggleAvail = (charId) => {
+    const availabilities = { ...this.state.availabilities };
+    if (availabilities[charId]) {
+      delete availabilities[charId];
+    } else {
+      availabilities[charId] = { free: true, price: '', level: '', jobLevel: '' };
+    }
+    this.setState({ availabilities });
+  };
+  updateAvail = (charId, patch) => {
+    const availabilities = { ...this.state.availabilities };
+    if (!availabilities[charId]) return;
+    availabilities[charId] = { ...availabilities[charId], ...patch };
+    this.setState({ availabilities });
+  };
+
+  copyCommand = (name, key) => {
+    const text = '/w ' + name + " Bonjour, j'ai besoin d'aide.";
+    try {
+      navigator.clipboard.writeText(text);
+    } catch (e) {}
+    clearTimeout(this.state.toastTimer);
+    const timer = setTimeout(() => this.setState({ copiedId: null }), 1600);
+    this.setState({ copiedId: key, toastTimer: timer });
+  };
+
+  renderVals() {
+    const s = this.state;
+    const clsColor = (cls) => CLASS_COLORS[cls] || '#5A4E80';
+    const initial = (name) => (name || '?').charAt(0).toUpperCase();
+
+    const charactersList = s.characters.map(c => ({
+      id: c.id, name: c.name, server: c.server, cls: c.cls,
+      clsColor: clsColor(c.cls), initial: initial(c.name),
+      onEdit: () => this.editCharacter(c),
+      onDelete: () => this.deleteCharacter(c.id),
+    }));
+
+    const todaysAvailList = s.characters.filter(c => s.availabilities[c.id]).map(c => {
+      const av = s.availabilities[c.id];
+      return {
+        id: c.id, name: c.name, server: c.server, cls: c.cls, clsColor: clsColor(c.cls),
+        priceLabel: av.free ? 'Gratuit' : (av.price ? av.price + ' k' : '—'),
+      };
+    });
+
+    const availList = s.characters.map(c => {
+      const av = s.availabilities[c.id];
+      const isOn = !!av;
+      return {
+        id: c.id, name: c.name, server: c.server, cls: c.cls, clsColor: clsColor(c.cls), initial: initial(c.name),
+        isOn,
+        toggleLabel: isOn ? 'Retirer ma dispo' : 'Disponible aujourd\'hui',
+        toggleBg: isOn ? '#FFE1D9' : '#6D4AFF',
+        toggleColor: isOn ? '#FF6F59' : '#ffffff',
+        onToggle: () => this.toggleAvail(c.id),
+        level: av ? av.level : '', jobLevel: av ? av.jobLevel : '',
+        price: av ? av.price : '',
+        showPriceInput: av ? !av.free : false,
+        freeTextColor: av && av.free ? '#2BC4B0' : '#C4BCE0',
+        paidTextColor: av && !av.free ? '#FF6F59' : '#C4BCE0',
+        onLevelChange: (e) => this.updateAvail(c.id, { level: e.target.value }),
+        onJobLevelChange: (e) => this.updateAvail(c.id, { jobLevel: e.target.value }),
+        onSetFree: () => this.updateAvail(c.id, { free: true, price: '' }),
+        onSetPaid: () => this.updateAvail(c.id, { free: false }),
+        onPriceChange: (e) => this.updateAvail(c.id, { price: e.target.value }),
+      };
+    });
+
+    const ownAvailAsResults = s.characters.filter(c => s.availabilities[c.id]).map(c => {
+      const av = s.availabilities[c.id];
+      return { id: 'own-' + c.id, name: c.name, server: c.server, cls: c.cls, level: Number(av.level) || 0, jobLevel: Number(av.jobLevel) || 0, price: av.free ? 0 : (Number(av.price) || 0) };
+    });
+    const pool = [...HELPERS_POOL, ...ownAvailAsResults];
+    const filtered = pool.filter(h => {
+      if (s.search.server && h.server !== s.search.server) return false;
+      if (s.search.cls && h.cls !== s.search.cls) return false;
+      if (s.search.minLevel && h.level < Number(s.search.minLevel)) return false;
+      if (s.search.minJob && h.jobLevel < Number(s.search.minJob)) return false;
+      return true;
+    });
+    const searchResults = filtered.map(h => ({
+      id: h.id, name: h.name, server: h.server, cls: h.cls, level: h.level, jobLevel: h.jobLevel,
+      clsColor: clsColor(h.cls), initial: initial(h.name),
+      priceLabel: h.price ? h.price + ' k' : 'Gratuit',
+      copyLabel: s.copiedId === h.id ? 'Copié !' : 'Copier /w',
+      onCopy: () => this.copyCommand(h.name, h.id),
+    }));
+
+    return {
+      loggedIn: s.loggedIn,
+      showAuth: !s.loggedIn,
+      isLogin: s.screen === 'login',
+      isRegStep1: s.screen === 'register-1',
+      isRegStep2: s.screen === 'register-2',
+      isHome: s.screen === 'home',
+      isCharacters: s.screen === 'characters',
+      isAvailability: s.screen === 'availability',
+      isSearch: s.screen === 'search',
+      navIsHome: s.screen === 'home',
+      navIsCharacters: s.screen === 'characters',
+      navIsAvailability: s.screen === 'availability',
+      navIsSearch: s.screen === 'search',
+      username: s.username,
+      servers: SERVERS,
+      classes: CLASSES,
+
+      loginUsername: s.loginUsername, loginPassword: s.loginPassword, loginError: s.loginError,
+      onLoginUsernameChange: (e) => this.setState({ loginUsername: e.target.value }),
+      onLoginPasswordChange: (e) => this.setState({ loginPassword: e.target.value }),
+      handleLogin: this.handleLogin,
+      goLogin: this.goLogin, goRegister: this.goRegister,
+
+      regUsername: s.regUsername, regPassword: s.regPassword, regConfirm: s.regConfirm, regError: s.regError,
+      onRegUsernameChange: (e) => this.setState({ regUsername: e.target.value }),
+      onRegPasswordChange: (e) => this.setState({ regPassword: e.target.value }),
+      onRegConfirmChange: (e) => this.setState({ regConfirm: e.target.value }),
+      goRegisterStep2: this.goRegisterStep2,
+
+      regCharName: s.regCharName, regCharServer: s.regCharServer, regCharCls: s.regCharCls, regCharError: s.regCharError,
+      onRegCharNameChange: (e) => this.setState({ regCharName: e.target.value }),
+      onRegCharServerChange: (e) => this.setState({ regCharServer: e.target.value }),
+      onRegCharClsChange: (e) => this.setState({ regCharCls: e.target.value }),
+      finishRegister: this.finishRegister,
+
+      goHome: this.goHome, goCharacters: this.goCharacters, goAvailability: this.goAvailability, goSearch: this.goSearch, logout: this.logout,
+
+      charCount: s.characters.length,
+      activeAvailCount: Object.keys(s.availabilities).length,
+      hasTodaysAvail: todaysAvailList.length > 0,
+      todaysAvailList,
+
+      charactersList,
+      charFormTitle: s.editingId != null ? 'Modifier le personnage' : 'Ajouter un personnage',
+      charFormSubmitLabel: s.editingId != null ? 'Enregistrer' : 'Ajouter',
+      isEditingChar: s.editingId != null,
+      charFormName: s.charFormName, charFormServer: s.charFormServer, charFormCls: s.charFormCls, charFormError: s.charFormError,
+      onCharFormNameChange: (e) => this.setState({ charFormName: e.target.value }),
+      onCharFormServerChange: (e) => this.setState({ charFormServer: e.target.value }),
+      onCharFormClsChange: (e) => this.setState({ charFormCls: e.target.value }),
+      submitCharForm: this.submitCharForm,
+      cancelEditChar: this.cancelEditChar,
+
+      availList,
+
+      searchServer: s.search.server, searchCls: s.search.cls, searchMinLevel: s.search.minLevel, searchMinJob: s.search.minJob,
+      onSearchServerChange: (e) => this.setState({ search: { ...s.search, server: e.target.value } }),
+      onSearchClsChange: (e) => this.setState({ search: { ...s.search, cls: e.target.value } }),
+      onSearchMinLevelChange: (e) => this.setState({ search: { ...s.search, minLevel: e.target.value } }),
+      onSearchMinJobChange: (e) => this.setState({ search: { ...s.search, minJob: e.target.value } }),
+      resultsCountLabel: searchResults.length + (searchResults.length > 1 ? ' aventuriers trouvés' : ' aventurier trouvé'),
+      searchResults,
+
+      showToast: !!s.copiedId,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

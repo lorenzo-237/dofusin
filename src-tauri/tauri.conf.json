@@ -13,8 +13,10 @@
     "windows": [
       {
         "title": "dofus-dispo",
-        "width": 800,
-        "height": 600,
+        "width": 430,
+        "height": 900,
+        "minWidth": 380,
+        "minHeight": 700,
         "resizable": true,
         "fullscreen": false
       }

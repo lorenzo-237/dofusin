@@ -1,0 +1,99 @@
+import { ClassAvatar, ClassIcon } from "@/components/shared/class-avatar"
+import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
+import type { Availability, AvailabilityInput, Character } from "@/lib/types"
+
+interface AvailabilityCardProps {
+  character: Character
+  availability?: Availability
+  onToggle: () => void
+  onFieldChange: (patch: Partial<AvailabilityInput>) => void
+}
+
+export function AvailabilityCard({
+  character,
+  availability,
+  onToggle,
+  onFieldChange,
+}: AvailabilityCardProps) {
+  const isOn = availability != null
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-2.5 flex items-center gap-2.5">
+        <ClassAvatar
+          name={character.name}
+          characterClass={character.class}
+          size="sm"
+        />
+        <div className="flex-1">
+          <div className="text-sm font-bold">{character.name}</div>
+          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+            <span>{character.server} ·</span>
+            <ClassIcon characterClass={character.class} />
+            <span>
+              {character.class}
+              {character.level ? ` · N${character.level}` : ""}
+            </span>
+          </div>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "mb-2.5 w-full rounded-[10px] py-2.5 text-center text-[13px] font-bold",
+          isOn
+            ? "bg-destructive/15 text-destructive"
+            : "bg-primary text-primary-foreground"
+        )}
+      >
+        {isOn ? "Retirer ma dispo" : "Disponible aujourd'hui"}
+      </button>
+
+      {isOn ? (
+        <div className="flex flex-col gap-2 border-t border-border pt-2">
+          <div className="flex gap-3.5">
+            <button
+              type="button"
+              onClick={() => onFieldChange({ free: true, price: null })}
+              className={cn(
+                "text-[13px] font-bold",
+                availability.free ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              ● Gratuit
+            </button>
+            <button
+              type="button"
+              onClick={() => onFieldChange({ free: false })}
+              className={cn(
+                "text-[13px] font-bold",
+                !availability.free ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              ● Payant
+            </button>
+          </div>
+          {!availability.free ? (
+            <Input
+              value={availability.price ?? ""}
+              onChange={(event) =>
+                onFieldChange({
+                  price:
+                    event.target.value === ""
+                      ? null
+                      : Number(event.target.value),
+                })
+              }
+              placeholder="Montant (kamas)"
+              aria-label="Montant (kamas)"
+              className="h-auto rounded-[9px] bg-muted px-2.5 py-2.5 text-sm"
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}
