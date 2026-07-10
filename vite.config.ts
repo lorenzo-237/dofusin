@@ -5,6 +5,11 @@ import { defineConfig } from "vite"
 
 // https://vite.dev/config/
 export default defineConfig({
+  server: {
+    watch: {
+      ignored: ["**/src-tauri/**"],
+    },
+  },
   plugins: [react(), tailwindcss()],
   resolve: {
     alias: {
