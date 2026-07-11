@@ -35,6 +35,7 @@ export function JobSearchResultItem({ result }: JobSearchResultItemProps) {
       </div>
       <CopyCommandButton
         characterName={result.characterName}
+        price={result.price}
         className="mt-2.5"
       />
     </div>

@@ -41,7 +41,11 @@ export function SearchResultItem({ result }: SearchResultItemProps) {
         </div>
         <div className="text-xs font-bold text-primary">{priceLabel}</div>
       </div>
-      <CopyCommandButton characterName={result.name} className="mt-2.5" />
+      <CopyCommandButton
+        characterName={result.name}
+        price={result.price}
+        className="mt-2.5"
+      />
     </div>
   )
 }
