@@ -11,7 +11,7 @@ Dofus-Dispo: a desktop app (Tauri) that lets players mark one of their game char
 - React 19 + TypeScript, Vite, Tailwind CSS v4
 - shadcn (style `base-rhea`, built on `@base-ui/react`, not Radix) — components live in `src/components/ui/`
 - TanStack Router, file-based (`src/routes/`), routes compiled to `src/routeTree.gen.ts`
-- Tauri 2 for the desktop shell (`src-tauri/`), window sized to the mobile design (~430×900)
+- Tauri 2 for the desktop shell (`src-tauri/`), window sized to the mobile design (~430×900), native title bar disabled (`decorations: false`) in favor of a custom-styled one
 
 ## Commands
 
@@ -61,6 +61,10 @@ Several things extend beyond the literal cahier des charges, all intentional and
 Organized by domain under `src/components/`: `auth/`, `characters/` (includes the "Mes métiers" job form/list, separate from the character form/list), `availability/`, `search/`, `home/`, plus `layout/` (shell, bottom nav, header) and `shared/` (things reused across domains: `ClassAvatar`/`ClassDot`, `ServerSelect`/`ClassSelect`/`JobSelect`, `CopyCommandButton`). Route files under `src/routes/` stay thin — they wire `useAuth()`/`getApiClient()` to these components rather than containing UI logic themselves.
 
 `CharacterForm` intentionally has no effect resyncing its fields to the `editingCharacter` prop — the parent (`routes/_authenticated/characters.tsx`) remounts it via `key={editingCharacter?.id ?? "new"}` instead (React's recommended way to reset state on identity change, and required by this repo's `react-hooks/set-state-in-effect` lint rule).
+
+### Custom title bar
+
+`layout/title-bar.tsx` replaces the native OS title bar (disabled via `decorations: false` in `tauri.conf.json`) so it can be styled with the app palette instead of system chrome. It only renders when `isTauri()` (from `@tauri-apps/api/core`) is true, so it's a no-op in a plain browser tab during `npm run dev`. Dragging works via the `data-tauri-drag-region` attribute (not JS); minimize/close call `getCurrentWindow()` from `@tauri-apps/api/window`, which requires the `core:window:allow-close`/`allow-minimize`/`allow-start-dragging` permissions explicitly granted in `src-tauri/capabilities/default.json` (`core:default` alone doesn't include them). No maximize button — the window is meant to stay phone-shaped.
 
 ## Conventions
 

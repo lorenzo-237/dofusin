@@ -34,14 +34,20 @@ export const CLASSES = [
 export type CharacterClass = (typeof CLASSES)[number]
 
 // TODO(user): liste de départ à compléter avec les vrais métiers du jeu.
-export const JOBS = [
-  "Bûcheron",
-  "Mineur",
-  "Forgeron",
-  "Alchimiste",
-] as const
+export const JOBS = ["Alchimiste", "Bûcheron", "Forgeron", "Mineur"] as const
 
 export type JobName = (typeof JOBS)[number]
+
+export const JOB_COLORS: Record<JobName, string> = {
+  Alchimiste: "#8E5FBF",
+  Bûcheron: "#6B8E4E",
+  Forgeron: "#B5651D",
+  Mineur: "#7A7A7A",
+}
+
+export function jobColor(job: string): string {
+  return JOB_COLORS[job as JobName] ?? "#8A8271"
+}
 
 export const CLASS_COLORS: Record<CharacterClass, string> = {
   Cra: "#4E9A5D",

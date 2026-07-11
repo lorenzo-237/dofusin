@@ -10,9 +10,11 @@ interface JobListProps {
 export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
   if (jobs.length === 0) return null
 
+  const sortedJobs = [...jobs].sort((a, b) => a.job.localeCompare(b.job, "fr"))
+
   return (
     <div className="mb-4.5 flex flex-col gap-2">
-      {jobs.map((job) => (
+      {sortedJobs.map((job) => (
         <JobListItem
           key={job.id}
           job={job}

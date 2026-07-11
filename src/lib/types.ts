@@ -47,6 +47,11 @@ export type AvailabilityInput = Pick<
   "characterId" | "free" | "price"
 >
 
+export interface HelperJobLevel {
+  job: string
+  level: number
+}
+
 export interface HelperSearchResult {
   id: string
   name: string
@@ -54,6 +59,7 @@ export interface HelperSearchResult {
   class: string
   level: number
   price: number
+  jobs: HelperJobLevel[]
 }
 
 export interface SearchFilters {

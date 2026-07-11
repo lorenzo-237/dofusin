@@ -173,6 +173,9 @@ export class HttpApiClient implements ApiClient {
     })
   }
 
+  // Not in the cahier des charges: each result also carries `jobs`, the
+  // helper's account-wide job levels for that server (see Job in
+  // lib/types.ts), so the backend must join them in alongside the row.
   searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]> {
     const params = new URLSearchParams()
     if (filters.server) params.set("server", filters.server)

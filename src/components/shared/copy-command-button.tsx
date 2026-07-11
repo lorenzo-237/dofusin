@@ -1,4 +1,5 @@
 import * as React from "react"
+import { Check, MessageCircleHeart } from "lucide-react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -36,9 +37,19 @@ export function CopyCommandButton({
       variant="secondary"
       size="sm"
       onClick={handleCopy}
-      className={cn("w-full", className)}
+      className={cn("w-full gap-1.5", className)}
     >
-      {justCopied ? "Copié !" : "Copier /w"}
+      {justCopied ? (
+        <>
+          <Check className="size-3.5" />
+          Copié !
+        </>
+      ) : (
+        <>
+          <MessageCircleHeart className="size-3.5" />
+          Copier le message
+        </>
+      )}
     </Button>
   )
 }

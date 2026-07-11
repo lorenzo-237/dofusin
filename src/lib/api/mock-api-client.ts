@@ -282,6 +282,12 @@ export class MockApiClient implements ApiClient {
       .map((a) => {
         const character = db.characters.find((c) => c.id === a.characterId)
         if (!character) return null
+        const jobs = db.jobs
+          .filter(
+            (j) =>
+              j.userId === character.userId && j.server === character.server
+          )
+          .map((j) => ({ job: j.job, level: Number(j.level) || 0 }))
         return {
           id: character.id,
           name: character.name,
@@ -289,6 +295,7 @@ export class MockApiClient implements ApiClient {
           class: character.class,
           level: Number(character.level) || 0,
           price: a.free ? 0 : Number(a.price) || 0,
+          jobs,
         } satisfies HelperSearchResult
       })
       .filter((h): h is HelperSearchResult => h !== null)
