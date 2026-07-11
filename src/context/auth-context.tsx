@@ -1,5 +1,8 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
+import { isTauri } from "@tauri-apps/api/core"
+import { onOpenUrl } from "@tauri-apps/plugin-deep-link"
+import { openUrl } from "@tauri-apps/plugin-opener"
 
 import { getApiClient } from "@/lib/api"
 import { getSession, setSession, subscribeSession } from "@/lib/auth-store"
@@ -12,10 +15,17 @@ import type {
   JobAvailability,
   JobAvailabilityInput,
   JobInput,
-  LoginInput,
-  RegisterInput,
   User,
 } from "@/lib/types"
+
+const DISCORD_REDIRECT_URI = "dofusin://auth/callback"
+
+export class CancelledLoginError extends Error {
+  constructor() {
+    super("Connexion annulée.")
+    this.name = "CancelledLoginError"
+  }
+}
 
 interface AuthContextValue {
   user: User | null
@@ -23,12 +33,13 @@ interface AuthContextValue {
   isAuthenticated: boolean
 
   characters: Character[]
+  charactersLoaded: boolean
   jobs: Job[]
   availabilities: Availability[]
   jobAvailabilities: JobAvailability[]
 
-  login: (input: LoginInput) => Promise<void>
-  register: (input: RegisterInput) => Promise<void>
+  loginWithDiscord: () => Promise<void>
+  cancelDiscordLogin: () => void
   logout: () => void
 
   createCharacter: (input: CharacterInput) => Promise<void>
@@ -61,6 +72,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   >([])
 
   const token = session?.token ?? null
+  // Derived (not synced via effect setState) so it naturally reads false
+  // whenever the token is absent or a fetch for the *current* token hasn't
+  // resolved yet — including right after a fresh login, before the effect
+  // below has had a chance to run.
+  const [loadedForToken, setLoadedForToken] = React.useState<string | null>(
+    null
+  )
+  const charactersLoaded = token != null && loadedForToken === token
 
   React.useEffect(() => {
     if (!token) return
@@ -83,6 +102,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setJobs(nextJobs)
         setAvailabilities(nextAvailabilities)
         setJobAvailabilities(nextJobAvailabilities)
+        setLoadedForToken(token)
       }
     )
     return () => {
@@ -90,14 +110,79 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token])
 
-  const login = React.useCallback(async (input: LoginInput) => {
-    const nextSession = await getApiClient().login(input)
-    setSession(nextSession)
+  // Resolved/rejected by the onOpenUrl listener below once Discord redirects
+  // back through the `dofusin://` deep link — kept in a ref so the listener
+  // (registered once, at the provider level) can settle whatever promise
+  // loginWithDiscord() is currently awaiting.
+  const pendingLoginRef = React.useRef<{
+    state: string
+    resolve: () => void
+    reject: (reason: unknown) => void
+  } | null>(null)
+
+  React.useEffect(() => {
+    if (!isTauri()) return
+    const unlistenPromise = onOpenUrl((urls) => {
+      const pending = pendingLoginRef.current
+      if (!pending) return
+      const url = urls[0]
+      if (!url) return
+
+      let parsed: URL
+      try {
+        parsed = new URL(url)
+      } catch {
+        return
+      }
+      const code = parsed.searchParams.get("code")
+      const state = parsed.searchParams.get("state")
+      if (!code || state !== pending.state) return
+
+      pendingLoginRef.current = null
+      getApiClient()
+        .loginWithDiscord(code)
+        .then((nextSession) => {
+          setSession(nextSession)
+          pending.resolve()
+        })
+        .catch(pending.reject)
+    })
+    return () => {
+      void unlistenPromise.then((unlisten) => unlisten())
+    }
   }, [])
 
-  const register = React.useCallback(async (input: RegisterInput) => {
-    const nextSession = await getApiClient().register(input)
-    setSession(nextSession)
+  const loginWithDiscord = React.useCallback(async () => {
+    const isRealDiscordFlow =
+      isTauri() && import.meta.env.VITE_API_STRATEGY === "http"
+
+    if (!isRealDiscordFlow) {
+      // No OS deep link outside Tauri, and nothing to actually exchange in
+      // mock strategy — skip the browser round-trip entirely.
+      const nextSession = await getApiClient().loginWithDiscord("mock")
+      setSession(nextSession)
+      return
+    }
+
+    await new Promise<void>((resolve, reject) => {
+      const state = crypto.randomUUID()
+      pendingLoginRef.current = { state, resolve, reject }
+      const params = new URLSearchParams({
+        client_id: import.meta.env.VITE_DISCORD_CLIENT_ID ?? "",
+        redirect_uri: DISCORD_REDIRECT_URI,
+        response_type: "code",
+        scope: "identify",
+        state,
+      })
+      openUrl(
+        `https://discord.com/api/v10/oauth2/authorize?${params.toString()}`
+      ).catch(reject)
+    })
+  }, [])
+
+  const cancelDiscordLogin = React.useCallback(() => {
+    pendingLoginRef.current?.reject(new CancelledLoginError())
+    pendingLoginRef.current = null
   }, [])
 
   const logout = React.useCallback(() => {
@@ -223,11 +308,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token,
       isAuthenticated: session != null,
       characters,
+      charactersLoaded,
       jobs,
       availabilities,
       jobAvailabilities,
-      login,
-      register,
+      loginWithDiscord,
+      cancelDiscordLogin,
       logout,
       createCharacter,
       updateCharacter,
@@ -243,11 +329,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       session,
       token,
       characters,
+      charactersLoaded,
       jobs,
       availabilities,
       jobAvailabilities,
-      login,
-      register,
+      loginWithDiscord,
+      cancelDiscordLogin,
       logout,
       createCharacter,
       updateCharacter,

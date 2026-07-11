@@ -11,8 +11,6 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
-  LoginInput,
-  RegisterInput,
   SearchFilters,
 } from "@/lib/types"
 
@@ -33,8 +31,10 @@ export class ApiError extends Error {
  * (see `getApiClient` in `./index.ts`).
  */
 export interface ApiClient {
-  register(input: RegisterInput): Promise<AuthSession>
-  login(input: LoginInput): Promise<AuthSession>
+  // Auth is Discord OAuth2 only — no password is ever stored. `code` is the
+  // authorization code obtained via the OS deep link (or a placeholder
+  // outside Tauri, see AuthProvider.loginWithDiscord).
+  loginWithDiscord(code: string): Promise<AuthSession>
 
   getCharacters(token: string): Promise<Character[]>
   createCharacter(token: string, input: CharacterInput): Promise<Character>

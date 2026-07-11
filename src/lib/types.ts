@@ -1,6 +1,7 @@
 export interface User {
   id: string
   username: string
+  avatarUrl?: string
 }
 
 export interface AuthSession {
@@ -103,13 +104,3 @@ export interface JobSearchFilters {
   job: string
 }
 
-export interface RegisterInput {
-  username: string
-  password: string
-  character: CharacterInput
-}
-
-export interface LoginInput {
-  username: string
-  password: string
-}

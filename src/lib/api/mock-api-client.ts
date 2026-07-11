@@ -15,8 +15,6 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
-  LoginInput,
-  RegisterInput,
   SearchFilters,
   User,
 } from "@/lib/types"
@@ -24,9 +22,7 @@ import type {
 const STORAGE_KEY = "dofus-dispo:mock-db"
 const SIMULATED_LATENCY_MS = 350
 
-interface MockUser extends User {
-  password: string
-}
+type MockUser = User
 
 interface MockDb {
   users: MockUser[]
@@ -37,9 +33,12 @@ interface MockDb {
   tokens: Record<string, string>
 }
 
+// Auth is Discord OAuth2 only — nothing to actually validate outside Tauri,
+// so there's a single deterministic mock account (no real Discord code ever
+// reaches this client, see AuthProvider.loginWithDiscord).
 function emptyDb(): MockDb {
   return {
-    users: [{ id: "u1", username: "test", password: "test" }],
+    users: [{ id: "u1", username: "test" }],
     characters: [],
     jobs: [],
     availabilities: [],
@@ -110,50 +109,10 @@ export class MockApiClient implements ApiClient {
     return job
   }
 
-  async register(input: RegisterInput): Promise<AuthSession> {
+  async loginWithDiscord(): Promise<AuthSession> {
     await delay()
     const db = loadDb()
-    const username = input.username.trim()
-    const usernameTaken = db.users.some(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    )
-    if (usernameTaken) {
-      throw new ApiError("Ce pseudo est déjà utilisé.", 409)
-    }
-
-    const user: MockUser = {
-      id: generateId(),
-      username,
-      password: input.password,
-    }
-    const character: Character = {
-      id: generateId(),
-      userId: user.id,
-      name: input.character.name.trim(),
-      server: input.character.server,
-      class: input.character.class,
-      level: input.character.level,
-    }
-    const token = generateId()
-
-    db.users.push(user)
-    db.characters.push(character)
-    db.tokens[token] = user.id
-    saveDb(db)
-
-    return toSession(user, token)
-  }
-
-  async login(input: LoginInput): Promise<AuthSession> {
-    await delay()
-    const db = loadDb()
-    const username = input.username.trim()
-    const user = db.users.find(
-      (u) => u.username.toLowerCase() === username.toLowerCase()
-    )
-    if (!user || user.password !== input.password) {
-      throw new ApiError("Pseudo ou mot de passe incorrect.", 401)
-    }
+    const user = db.users[0]
 
     const token = generateId()
     db.tokens[token] = user.id

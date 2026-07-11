@@ -13,33 +13,14 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
-  LoginInput,
-  RegisterInput,
   SearchFilters,
-  User,
 } from "@/lib/types"
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL ?? "http://localhost:3000/api"
 
-interface LoginResponse {
+interface DiscordAuthResponse {
   token: string
-}
-
-/**
- * The cahier des charges only guarantees the login route returns a JWT, not
- * a user payload, so the account id is read from the token's own claims
- * (falls back to the username we already know if the claim is absent).
- */
-function decodeUserIdFromToken(token: string, fallback: string): string {
-  try {
-    const payload = token.split(".")[1]
-    const normalized = payload.replace(/-/g, "+").replace(/_/g, "/")
-    const json = JSON.parse(atob(normalized)) as Record<string, unknown>
-    const id = json.sub ?? json.id ?? json.userId
-    return typeof id === "string" ? id : fallback
-  } catch {
-    return fallback
-  }
+  user: { id: string; username: string; avatarUrl: string | null }
 }
 
 async function request<T>(
@@ -82,29 +63,15 @@ async function request<T>(
  * in project/cahier_charges.md. Selected when VITE_API_STRATEGY=http.
  */
 export class HttpApiClient implements ApiClient {
-  async register(input: RegisterInput): Promise<AuthSession> {
-    await request("/auth/register", {
-      method: "POST",
-      body: { username: input.username, password: input.password },
-    })
-    const session = await this.login({
-      username: input.username,
-      password: input.password,
-    })
-    await this.createCharacter(session.token, input.character)
-    return session
-  }
-
-  async login(input: LoginInput): Promise<AuthSession> {
-    const { token } = await request<LoginResponse>("/auth/login", {
-      method: "POST",
-      body: input,
-    })
-    const user: User = {
-      id: decodeUserIdFromToken(token, input.username),
-      username: input.username,
+  async loginWithDiscord(code: string): Promise<AuthSession> {
+    const { token, user } = await request<DiscordAuthResponse>(
+      "/auth/discord",
+      { method: "POST", body: { code } }
+    )
+    return {
+      token,
+      user: { id: user.id, username: user.username, avatarUrl: user.avatarUrl ?? undefined },
     }
-    return { user, token }
   }
 
   getCharacters(token: string): Promise<Character[]> {
