@@ -4,11 +4,17 @@ import type { Job } from "@/lib/types"
 
 interface JobListItemProps {
   job: Job
+  characterName: string
   onEdit: () => void
   onDelete: () => void
 }
 
-export function JobListItem({ job, onEdit, onDelete }: JobListItemProps) {
+export function JobListItem({
+  job,
+  characterName,
+  onEdit,
+  onDelete,
+}: JobListItemProps) {
   return (
     <div className="flex items-center gap-3 rounded-2xl border border-border bg-card px-3.5 py-3">
       <div className="flex-1">
@@ -19,7 +25,8 @@ export function JobListItem({ job, onEdit, onDelete }: JobListItemProps) {
           {job.job}
         </Badge>
         <div className="text-xs text-muted-foreground">
-          {job.server} · Niveau {job.level}
+          Niveau {job.level}
+          {characterName ? ` · via ${characterName}` : ""}
         </div>
       </div>
       <button

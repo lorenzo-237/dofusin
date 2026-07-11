@@ -9,6 +9,8 @@ import type {
   Character,
   CharacterInput,
   Job,
+  JobAvailability,
+  JobAvailabilityInput,
   JobInput,
   LoginInput,
   RegisterInput,
@@ -23,6 +25,7 @@ interface AuthContextValue {
   characters: Character[]
   jobs: Job[]
   availabilities: Availability[]
+  jobAvailabilities: JobAvailability[]
 
   login: (input: LoginInput) => Promise<void>
   register: (input: RegisterInput) => Promise<void>
@@ -37,6 +40,9 @@ interface AuthContextValue {
 
   setAvailability: (input: AvailabilityInput) => Promise<void>
   removeAvailability: (characterId: string) => Promise<void>
+
+  setJobAvailability: (input: JobAvailabilityInput) => Promise<void>
+  removeJobAvailability: (jobId: string) => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(
@@ -50,6 +56,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [availabilities, setAvailabilities] = React.useState<Availability[]>(
     []
   )
+  const [jobAvailabilities, setJobAvailabilities] = React.useState<
+    JobAvailability[]
+  >([])
 
   const token = session?.token ?? null
 
@@ -61,12 +70,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       client.getCharacters(token),
       client.getJobs(token),
       client.getMyAvailabilities(token),
-    ]).then(([nextCharacters, nextJobs, nextAvailabilities]) => {
-      if (cancelled) return
-      setCharacters(nextCharacters)
-      setJobs(nextJobs)
-      setAvailabilities(nextAvailabilities)
-    })
+      client.getMyJobAvailabilities(token),
+    ]).then(
+      ([
+        nextCharacters,
+        nextJobs,
+        nextAvailabilities,
+        nextJobAvailabilities,
+      ]) => {
+        if (cancelled) return
+        setCharacters(nextCharacters)
+        setJobs(nextJobs)
+        setAvailabilities(nextAvailabilities)
+        setJobAvailabilities(nextJobAvailabilities)
+      }
+    )
     return () => {
       cancelled = true
     }
@@ -87,6 +105,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setCharacters([])
     setJobs([])
     setAvailabilities([])
+    setJobAvailabilities([])
   }, [])
 
   const requireToken = React.useCallback(() => {
@@ -143,6 +162,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const activeToken = requireToken()
       await getApiClient().deleteJob(activeToken, id)
       setJobs((prev) => prev.filter((j) => j.id !== id))
+      setJobAvailabilities((prev) => prev.filter((a) => a.jobId !== id))
     },
     [requireToken]
   )
@@ -173,6 +193,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [requireToken]
   )
 
+  const setJobAvailability = React.useCallback(
+    async (input: JobAvailabilityInput) => {
+      const activeToken = requireToken()
+      const availability = await getApiClient().setJobAvailability(
+        activeToken,
+        input
+      )
+      setJobAvailabilities((prev) => [
+        ...prev.filter((a) => a.jobId !== input.jobId),
+        availability,
+      ])
+    },
+    [requireToken]
+  )
+
+  const removeJobAvailability = React.useCallback(
+    async (jobId: string) => {
+      const activeToken = requireToken()
+      await getApiClient().removeJobAvailability(activeToken, jobId)
+      setJobAvailabilities((prev) => prev.filter((a) => a.jobId !== jobId))
+    },
+    [requireToken]
+  )
+
   const value = React.useMemo<AuthContextValue>(
     () => ({
       user: session?.user ?? null,
@@ -181,6 +225,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       characters,
       jobs,
       availabilities,
+      jobAvailabilities,
       login,
       register,
       logout,
@@ -191,6 +236,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       deleteJob,
       setAvailability,
       removeAvailability,
+      setJobAvailability,
+      removeJobAvailability,
     }),
     [
       session,
@@ -198,6 +245,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       characters,
       jobs,
       availabilities,
+      jobAvailabilities,
       login,
       register,
       logout,
@@ -208,6 +256,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       deleteJob,
       setAvailability,
       removeAvailability,
+      setJobAvailability,
+      removeJobAvailability,
     ]
   )
 

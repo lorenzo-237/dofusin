@@ -1,26 +1,26 @@
-import { AvailabilityCard } from "@/components/availability/availability-card"
+import { CharacterAvailabilityCard } from "@/components/availability/character-availability-card"
 import type { Availability, AvailabilityInput, Character } from "@/lib/types"
 
-interface AvailabilityListProps {
+interface CharacterAvailabilityListProps {
   characters: Character[]
   availabilities: Availability[]
   onToggle: (character: Character) => void
   onFieldChange: (
     characterId: string,
     patch: Partial<AvailabilityInput>
-  ) => void
+  ) => Promise<void>
 }
 
-export function AvailabilityList({
+export function CharacterAvailabilityList({
   characters,
   availabilities,
   onToggle,
   onFieldChange,
-}: AvailabilityListProps) {
+}: CharacterAvailabilityListProps) {
   return (
     <div className="flex flex-col gap-3">
       {characters.map((character) => (
-        <AvailabilityCard
+        <CharacterAvailabilityCard
           key={character.id}
           character={character}
           availability={availabilities.find(

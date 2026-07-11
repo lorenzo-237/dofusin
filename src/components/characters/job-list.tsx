@@ -1,13 +1,14 @@
 import { JobListItem } from "@/components/characters/job-list-item"
-import type { Job } from "@/lib/types"
+import type { Character, Job } from "@/lib/types"
 
 interface JobListProps {
   jobs: Job[]
+  characters: Character[]
   onEdit: (job: Job) => void
   onDelete: (job: Job) => void
 }
 
-export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
+export function JobList({ jobs, characters, onEdit, onDelete }: JobListProps) {
   if (jobs.length === 0) return null
 
   const sortedJobs = [...jobs].sort((a, b) => a.job.localeCompare(b.job, "fr"))
@@ -18,6 +19,9 @@ export function JobList({ jobs, onEdit, onDelete }: JobListProps) {
         <JobListItem
           key={job.id}
           job={job}
+          characterName={
+            characters.find((c) => c.id === job.characterId)?.name ?? ""
+          }
           onEdit={() => onEdit(job)}
           onDelete={() => onDelete(job)}
         />

@@ -1,6 +1,6 @@
 import type { ApiClient } from "@/lib/api/api-client"
 import { ApiError } from "@/lib/api/api-client"
-import { MOCK_HELPERS_POOL } from "@/lib/api/mock-data"
+import { MOCK_HELPERS_POOL, MOCK_JOB_HELPERS_POOL } from "@/lib/api/mock-data"
 import { todayISODate } from "@/lib/date"
 import type {
   Availability,
@@ -10,7 +10,11 @@ import type {
   CharacterInput,
   HelperSearchResult,
   Job,
+  JobAvailability,
+  JobAvailabilityInput,
   JobInput,
+  JobSearchFilters,
+  JobSearchResult,
   LoginInput,
   RegisterInput,
   SearchFilters,
@@ -29,6 +33,7 @@ interface MockDb {
   characters: Character[]
   jobs: Job[]
   availabilities: Availability[]
+  jobAvailabilities: JobAvailability[]
   tokens: Record<string, string>
 }
 
@@ -38,6 +43,7 @@ function emptyDb(): MockDb {
     characters: [],
     jobs: [],
     availabilities: [],
+    jobAvailabilities: [],
     tokens: {},
   }
 }
@@ -94,6 +100,14 @@ export class MockApiClient implements ApiClient {
       throw new ApiError("Personnage introuvable.", 404)
     }
     return character
+  }
+
+  private assertOwnedJob(db: MockDb, userId: string, jobId: string): Job {
+    const job = db.jobs.find((j) => j.id === jobId && j.userId === userId)
+    if (!job) {
+      throw new ApiError("Métier introuvable.", 404)
+    }
+    return job
   }
 
   async register(input: RegisterInput): Promise<AuthSession> {
@@ -204,6 +218,14 @@ export class MockApiClient implements ApiClient {
     const db = loadDb()
     const userId = this.resolveUserId(db, token)
 
+    const character = this.assertOwnedCharacter(db, userId, input.characterId)
+    if (character.server !== input.server) {
+      throw new ApiError(
+        "Ce personnage n'est pas sur le serveur sélectionné.",
+        400
+      )
+    }
+
     const existing = db.jobs.find(
       (j) =>
         j.userId === userId &&
@@ -211,7 +233,7 @@ export class MockApiClient implements ApiClient {
         j.job === input.job
     )
     const job: Job = existing
-      ? { ...existing, level: input.level }
+      ? { ...existing, ...input }
       : { id: generateId(), userId, ...input }
 
     db.jobs = [...db.jobs.filter((j) => j.id !== job.id), job]
@@ -224,6 +246,52 @@ export class MockApiClient implements ApiClient {
     const db = loadDb()
     const userId = this.resolveUserId(db, token)
     db.jobs = db.jobs.filter((j) => !(j.id === id && j.userId === userId))
+    db.jobAvailabilities = db.jobAvailabilities.filter((a) => a.jobId !== id)
+    saveDb(db)
+  }
+
+  async getMyJobAvailabilities(token: string): Promise<JobAvailability[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myJobIds = new Set(
+      db.jobs.filter((j) => j.userId === userId).map((j) => j.id)
+    )
+    const today = todayISODate()
+    return db.jobAvailabilities.filter(
+      (a) => myJobIds.has(a.jobId) && a.availableDate === today
+    )
+  }
+
+  async setJobAvailability(
+    token: string,
+    input: JobAvailabilityInput
+  ): Promise<JobAvailability> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    this.assertOwnedJob(db, userId, input.jobId)
+
+    const availability: JobAvailability = {
+      ...input,
+      availableDate: todayISODate(),
+    }
+    db.jobAvailabilities = db.jobAvailabilities.filter(
+      (a) => a.jobId !== input.jobId
+    )
+    db.jobAvailabilities.push(availability)
+    saveDb(db)
+    return availability
+  }
+
+  async removeJobAvailability(token: string, jobId: string): Promise<void> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    this.assertOwnedJob(db, userId, jobId)
+    db.jobAvailabilities = db.jobAvailabilities.filter(
+      (a) => a.jobId !== jobId
+    )
     saveDb(db)
   }
 
@@ -308,5 +376,39 @@ export class MockApiClient implements ApiClient {
       if (filters.minLevel && h.level < Number(filters.minLevel)) return false
       return true
     })
+  }
+
+  async searchJobHelpers(
+    filters: JobSearchFilters
+  ): Promise<JobSearchResult[]> {
+    await delay()
+    const db = loadDb()
+    const today = todayISODate()
+
+    const liveJobHelpers: JobSearchResult[] = db.jobAvailabilities
+      .filter((a) => a.availableDate === today)
+      .map((a) => {
+        const job = db.jobs.find((j) => j.id === a.jobId)
+        if (!job) return null
+        const character = db.characters.find((c) => c.id === job.characterId)
+        if (!character) return null
+        return {
+          id: job.id,
+          job: job.job,
+          level: Number(job.level) || 0,
+          price: a.free ? 0 : Number(a.price) || 0,
+          server: job.server,
+          characterName: character.name,
+          characterClass: character.class,
+          characterLevel: Number(character.level) || 0,
+        } satisfies JobSearchResult
+      })
+      .filter((h): h is JobSearchResult => h !== null)
+
+    const pool = [...MOCK_JOB_HELPERS_POOL, ...liveJobHelpers]
+
+    return pool.filter(
+      (h) => h.server === filters.server && h.job === filters.job
+    )
   }
 }

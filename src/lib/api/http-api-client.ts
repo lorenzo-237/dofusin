@@ -8,7 +8,11 @@ import type {
   CharacterInput,
   HelperSearchResult,
   Job,
+  JobAvailability,
+  JobAvailabilityInput,
   JobInput,
+  JobSearchFilters,
+  JobSearchResult,
   LoginInput,
   RegisterInput,
   SearchFilters,
@@ -173,6 +177,31 @@ export class HttpApiClient implements ApiClient {
     })
   }
 
+  // Not in the cahier des charges: being available for a job (e.g.
+  // crafting for hire) is separate from character availability, so it
+  // gets its own mirror of the /availability routes keyed by jobId.
+  getMyJobAvailabilities(token: string): Promise<JobAvailability[]> {
+    return request<JobAvailability[]>("/job-availability/me", { token })
+  }
+
+  setJobAvailability(
+    token: string,
+    input: JobAvailabilityInput
+  ): Promise<JobAvailability> {
+    return request<JobAvailability>("/job-availability", {
+      method: "POST",
+      token,
+      body: input,
+    })
+  }
+
+  async removeJobAvailability(token: string, jobId: string): Promise<void> {
+    await request(`/job-availability/${jobId}`, {
+      method: "DELETE",
+      token,
+    })
+  }
+
   // Not in the cahier des charges: each result also carries `jobs`, the
   // helper's account-wide job levels for that server (see Job in
   // lib/types.ts), so the backend must join them in alongside the row.
@@ -185,5 +214,16 @@ export class HttpApiClient implements ApiClient {
     return request<HelperSearchResult[]>(
       `/helpers${query ? `?${query}` : ""}`
     )
+  }
+
+  // Not in the cahier des charges: a whole new endpoint for browsing jobs
+  // that were explicitly marked available for hire (JobAvailability),
+  // distinct from /helpers which lists characters.
+  searchJobHelpers(filters: JobSearchFilters): Promise<JobSearchResult[]> {
+    const params = new URLSearchParams({
+      server: filters.server,
+      job: filters.job,
+    })
+    return request<JobSearchResult[]>(`/job-helpers?${params.toString()}`)
   }
 }

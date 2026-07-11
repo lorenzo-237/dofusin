@@ -1,8 +1,10 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 
+import { JobSearchPanel } from "@/components/search/job-search-panel"
 import { SearchFiltersCard } from "@/components/search/search-filters-card"
 import { SearchResultsList } from "@/components/search/search-results-list"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getApiClient } from "@/lib/api"
 import { SERVERS } from "@/lib/game-data"
 import type { HelperSearchResult, SearchFilters } from "@/lib/types"
@@ -36,11 +38,28 @@ function SearchScreen() {
 
   return (
     <div className="pt-1">
-      <SearchFiltersCard
-        filters={filters}
-        onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
-      />
-      <SearchResultsList results={results} isLoading={isPending} />
+      <Tabs defaultValue="characters">
+        <TabsList className="mb-4 w-full">
+          <TabsTrigger value="characters" className="flex-1">
+            Personnages
+          </TabsTrigger>
+          <TabsTrigger value="jobs" className="flex-1">
+            Métiers
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="characters">
+          <SearchFiltersCard
+            filters={filters}
+            onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+          />
+          <SearchResultsList results={results} isLoading={isPending} />
+        </TabsContent>
+
+        <TabsContent value="jobs">
+          <JobSearchPanel />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

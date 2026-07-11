@@ -1,8 +1,19 @@
+import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 
-import { AvailabilityList } from "@/components/availability/availability-list"
+import { CharacterAvailabilityList } from "@/components/availability/character-availability-list"
+import { JobAvailabilityBulkBar } from "@/components/availability/job-availability-bulk-bar"
+import { JobAvailabilityList } from "@/components/availability/job-availability-list"
+import { ServerSelect } from "@/components/shared/server-select"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/auth-context"
-import type { AvailabilityInput, Character } from "@/lib/types"
+import { SERVERS } from "@/lib/game-data"
+import type {
+  AvailabilityInput,
+  Character,
+  Job,
+  JobAvailabilityInput,
+} from "@/lib/types"
 
 export const Route = createFileRoute("/_authenticated/availability")({
   staticData: { title: "Disponibilité" },
@@ -10,8 +21,22 @@ export const Route = createFileRoute("/_authenticated/availability")({
 })
 
 function AvailabilityScreen() {
-  const { characters, availabilities, setAvailability, removeAvailability } =
-    useAuth()
+  const {
+    characters,
+    availabilities,
+    setAvailability,
+    removeAvailability,
+    jobs,
+    setJob,
+    jobAvailabilities,
+    setJobAvailability,
+    removeJobAvailability,
+  } = useAuth()
+
+  const [server, setServer] = React.useState<string>(SERVERS[0])
+
+  const serverCharacters = characters.filter((c) => c.server === server)
+  const serverJobs = jobs.filter((j) => j.server === server)
 
   const handleToggle = (character: Character) => {
     const existing = availabilities.find(
@@ -31,10 +56,10 @@ function AvailabilityScreen() {
   const handleFieldChange = (
     characterId: string,
     patch: Partial<AvailabilityInput>
-  ) => {
+  ): Promise<void> => {
     const existing = availabilities.find((a) => a.characterId === characterId)
-    if (!existing) return
-    void setAvailability({
+    if (!existing) return Promise.resolve()
+    return setAvailability({
       characterId,
       free: existing.free,
       price: existing.price,
@@ -42,17 +67,112 @@ function AvailabilityScreen() {
     })
   }
 
+  const handleJobToggle = (job: Job) => {
+    const existing = jobAvailabilities.find((a) => a.jobId === job.id)
+    if (existing) {
+      void removeJobAvailability(job.id)
+    } else {
+      void setJobAvailability({ jobId: job.id, free: true, price: null })
+    }
+  }
+
+  const handleJobFieldChange = (
+    jobId: string,
+    patch: Partial<JobAvailabilityInput>
+  ): Promise<void> => {
+    const existing = jobAvailabilities.find((a) => a.jobId === jobId)
+    if (!existing) return Promise.resolve()
+    return setJobAvailability({
+      jobId,
+      free: existing.free,
+      price: existing.price,
+      ...patch,
+    })
+  }
+
+  const handleJobCharacterChange = (job: Job, characterId: string) => {
+    void setJob({
+      server: job.server,
+      characterId,
+      job: job.job,
+      level: job.level,
+    })
+  }
+
+  const allServerJobsOn =
+    serverJobs.length > 0 &&
+    serverJobs.every((j) => jobAvailabilities.some((a) => a.jobId === j.id))
+
+  const handleToggleAllJobs = (on: boolean) => {
+    serverJobs.forEach((job) => {
+      const existing = jobAvailabilities.find((a) => a.jobId === job.id)
+      if (on && !existing) {
+        void setJobAvailability({ jobId: job.id, free: true, price: null })
+      } else if (!on && existing) {
+        void removeJobAvailability(job.id)
+      }
+    })
+  }
+
+  const handleAssignCharacterToAllJobs = (characterId: string) => {
+    if (!characterId) return
+    serverJobs.forEach((job) => {
+      void setJob({
+        server: job.server,
+        characterId,
+        job: job.job,
+        level: job.level,
+      })
+    })
+  }
+
   return (
     <div className="pt-1">
-      <p className="mb-4 text-[13px] text-muted-foreground">
+      <p className="mb-3 text-[13px] text-muted-foreground">
         Valable aujourd'hui seulement.
       </p>
-      <AvailabilityList
-        characters={characters}
-        availabilities={availabilities}
-        onToggle={handleToggle}
-        onFieldChange={handleFieldChange}
+      <ServerSelect
+        value={server}
+        onValueChange={setServer}
+        className="mb-4 h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
       />
+
+      <Tabs defaultValue="characters">
+        <TabsList className="mb-4 w-full">
+          <TabsTrigger value="characters" className="flex-1">
+            Personnages
+          </TabsTrigger>
+          <TabsTrigger value="jobs" className="flex-1">
+            Métiers
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="characters">
+          <CharacterAvailabilityList
+            characters={serverCharacters}
+            availabilities={availabilities}
+            onToggle={handleToggle}
+            onFieldChange={handleFieldChange}
+          />
+        </TabsContent>
+
+        <TabsContent value="jobs">
+          <JobAvailabilityBulkBar
+            characters={serverCharacters}
+            allOn={allServerJobsOn}
+            onToggleAll={handleToggleAllJobs}
+            onAssignCharacterToAll={handleAssignCharacterToAllJobs}
+          />
+          <JobAvailabilityList
+            jobs={serverJobs}
+            characters={serverCharacters}
+            availabilities={jobAvailabilities}
+            onToggle={handleJobToggle}
+            onFieldChange={handleJobFieldChange}
+            onCharacterChange={handleJobCharacterChange}
+          />
+        </TabsContent>
+      </Tabs>
     </div>
   )
 }

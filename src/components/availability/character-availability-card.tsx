@@ -1,21 +1,22 @@
+import { AvailabilityPriceInput } from "@/components/availability/availability-price-input"
 import { ClassAvatar, ClassIcon } from "@/components/shared/class-avatar"
-import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { cn } from "@/lib/utils"
 import type { Availability, AvailabilityInput, Character } from "@/lib/types"
 
-interface AvailabilityCardProps {
+interface CharacterAvailabilityCardProps {
   character: Character
   availability?: Availability
   onToggle: () => void
-  onFieldChange: (patch: Partial<AvailabilityInput>) => void
+  onFieldChange: (patch: Partial<AvailabilityInput>) => Promise<void>
 }
 
-export function AvailabilityCard({
+export function CharacterAvailabilityCard({
   character,
   availability,
   onToggle,
   onFieldChange,
-}: AvailabilityCardProps) {
+}: CharacterAvailabilityCardProps) {
   const isOn = availability != null
 
   return (
@@ -39,25 +40,17 @@ export function AvailabilityCard({
         </div>
       </div>
 
-      <button
-        type="button"
-        onClick={onToggle}
-        className={cn(
-          "mb-2.5 w-full rounded-[10px] py-2.5 text-center text-[13px] font-bold",
-          isOn
-            ? "bg-destructive/15 text-destructive"
-            : "bg-primary text-primary-foreground"
-        )}
-      >
-        {isOn ? "Retirer ma dispo" : "Disponible aujourd'hui"}
-      </button>
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-[13px] font-bold">Disponible pour une quête</span>
+        <Switch checked={isOn} onCheckedChange={onToggle} />
+      </div>
 
       {isOn ? (
         <div className="flex flex-col gap-2 border-t border-border pt-2">
           <div className="flex gap-3.5">
             <button
               type="button"
-              onClick={() => onFieldChange({ free: true, price: null })}
+              onClick={() => void onFieldChange({ free: true, price: null })}
               className={cn(
                 "text-[13px] font-bold",
                 availability.free ? "text-primary" : "text-muted-foreground"
@@ -67,7 +60,7 @@ export function AvailabilityCard({
             </button>
             <button
               type="button"
-              onClick={() => onFieldChange({ free: false })}
+              onClick={() => void onFieldChange({ free: false })}
               className={cn(
                 "text-[13px] font-bold",
                 !availability.free ? "text-destructive" : "text-muted-foreground"
@@ -77,19 +70,9 @@ export function AvailabilityCard({
             </button>
           </div>
           {!availability.free ? (
-            <Input
-              value={availability.price ?? ""}
-              onChange={(event) =>
-                onFieldChange({
-                  price:
-                    event.target.value === ""
-                      ? null
-                      : Number(event.target.value),
-                })
-              }
-              placeholder="Montant (kamas)"
-              aria-label="Montant (kamas)"
-              className="h-auto rounded-[9px] bg-muted px-2.5 py-2.5 text-sm"
+            <AvailabilityPriceInput
+              price={availability.price}
+              onPriceChange={(price) => onFieldChange({ price })}
             />
           ) : null}
         </div>

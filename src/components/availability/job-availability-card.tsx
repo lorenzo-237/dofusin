@@ -1,0 +1,93 @@
+import { AvailabilityPriceInput } from "@/components/availability/availability-price-input"
+import { CharacterCheckboxGroup } from "@/components/shared/character-checkbox-group"
+import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { jobColor } from "@/lib/game-data"
+import { cn } from "@/lib/utils"
+import type {
+  Character,
+  Job,
+  JobAvailability,
+  JobAvailabilityInput,
+} from "@/lib/types"
+
+interface JobAvailabilityCardProps {
+  job: Job
+  characters: Character[]
+  availability?: JobAvailability
+  onToggle: () => void
+  onFieldChange: (patch: Partial<JobAvailabilityInput>) => Promise<void>
+  onCharacterChange: (characterId: string) => void
+}
+
+export function JobAvailabilityCard({
+  job,
+  characters,
+  availability,
+  onToggle,
+  onFieldChange,
+  onCharacterChange,
+}: JobAvailabilityCardProps) {
+  const isOn = availability != null
+
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4">
+      <div className="mb-2.5 flex items-center gap-2.5">
+        <Badge
+          style={{ backgroundColor: jobColor(job.job) }}
+          className="h-5 rounded-full px-2 text-[11px] font-bold text-white"
+        >
+          {job.job}
+        </Badge>
+        <div className="text-xs text-muted-foreground">
+          {job.server} · Niveau {job.level}
+        </div>
+      </div>
+
+      <CharacterCheckboxGroup
+        value={job.characterId}
+        onValueChange={onCharacterChange}
+        characters={characters}
+        className="mb-2.5"
+      />
+
+      <div className="mb-2.5 flex items-center justify-between">
+        <span className="text-[13px] font-bold">Disponible pour du craft</span>
+        <Switch checked={isOn} onCheckedChange={onToggle} />
+      </div>
+
+      {isOn ? (
+        <div className="flex flex-col gap-2 border-t border-border pt-2">
+          <div className="flex gap-3.5">
+            <button
+              type="button"
+              onClick={() => void onFieldChange({ free: true, price: null })}
+              className={cn(
+                "text-[13px] font-bold",
+                availability.free ? "text-primary" : "text-muted-foreground"
+              )}
+            >
+              ● Gratuit
+            </button>
+            <button
+              type="button"
+              onClick={() => void onFieldChange({ free: false })}
+              className={cn(
+                "text-[13px] font-bold",
+                !availability.free ? "text-destructive" : "text-muted-foreground"
+              )}
+            >
+              ● Payant
+            </button>
+          </div>
+          {!availability.free ? (
+            <AvailabilityPriceInput
+              price={availability.price}
+              onPriceChange={(price) => onFieldChange({ price })}
+            />
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  )
+}

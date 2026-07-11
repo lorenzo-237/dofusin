@@ -1,14 +1,14 @@
 import * as React from "react"
 
 import { ClassSelect } from "@/components/shared/class-select"
-import { ServerSelect } from "@/components/shared/server-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ApiError } from "@/lib/api"
-import { CLASSES, SERVERS } from "@/lib/game-data"
+import { CLASSES } from "@/lib/game-data"
 import type { Character, CharacterInput } from "@/lib/types"
 
 interface CharacterFormProps {
+  server: string
   editingCharacter: Character | null
   onSubmit: (values: CharacterInput) => Promise<void>
   onCancelEdit: () => void
@@ -18,18 +18,18 @@ interface CharacterFormProps {
  * Fields are only initialized from `editingCharacter` on mount — the parent
  * must render this with `key={editingCharacter?.id ?? "new"}` so switching
  * between "add" and "edit X" (or between two characters) remounts it with
- * fresh values instead of needing an effect to resync state.
+ * fresh values instead of needing an effect to resync state. The server is
+ * fixed to whatever's selected on the page (see routes/_authenticated/
+ * characters.tsx) rather than picked here.
  */
 
 export function CharacterForm({
+  server,
   editingCharacter,
   onSubmit,
   onCancelEdit,
 }: CharacterFormProps) {
   const [name, setName] = React.useState(editingCharacter?.name ?? "")
-  const [server, setServer] = React.useState(
-    editingCharacter?.server ?? SERVERS[0]
-  )
   const [characterClass, setCharacterClass] = React.useState(
     editingCharacter?.class ?? CLASSES[0]
   )
@@ -54,7 +54,6 @@ export function CharacterForm({
       })
       if (!editingCharacter) {
         setName("")
-        setServer(SERVERS[0])
         setCharacterClass(CLASSES[0])
         setLevel("")
       }
@@ -69,6 +68,9 @@ export function CharacterForm({
     <div className="rounded-2xl border border-border bg-card p-4.5">
       <div className="mb-3 font-heading text-[15px] font-bold">
         {editingCharacter ? "Modifier le personnage" : "Ajouter un personnage"}
+        <span className="ml-1.5 font-sans text-xs font-normal text-muted-foreground">
+          sur {server}
+        </span>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
         <Input
@@ -77,11 +79,6 @@ export function CharacterForm({
           placeholder="Nom exact en jeu"
           aria-label="Nom exact en jeu"
           className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <ServerSelect
-          value={server}
-          onValueChange={setServer}
-          className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         <ClassSelect
           value={characterClass}

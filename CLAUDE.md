@@ -37,7 +37,9 @@ File-based TanStack Router under `src/routes/`:
 - `_authenticated.tsx` — pathless layout route; `beforeLoad` redirects to `/login` if there's no session. Renders the fixed header (title read from the active route's `staticData.title`, see `src/lib/router-static-data.d.ts`) and the bottom nav, with `<Outlet/>` scrolling in between.
 - `_authenticated/index.tsx` (Accueil), `characters.tsx`, `availability.tsx`, `search.tsx`.
 
-Auth guards read a plain module-level store (`src/lib/auth-store.ts`), not React state — `beforeLoad` runs outside components, so it can't use `useAuth()`. `AuthProvider` (`src/context/auth-context.tsx`) subscribes to that same store via `useSyncExternalStore` to expose it reactively (`useAuth()`), and also owns `characters`/`jobs`/`availabilities` plus all their CRUD actions so screens stay thin.
+Auth guards read a plain module-level store (`src/lib/auth-store.ts`), not React state — `beforeLoad` runs outside components, so it can't use `useAuth()`. `AuthProvider` (`src/context/auth-context.tsx`) subscribes to that same store via `useSyncExternalStore` to expose it reactively (`useAuth()`), and also owns `characters`/`jobs`/`availabilities`/`jobAvailabilities` plus all their CRUD actions so screens stay thin.
+
+The Disponibilité screen (`_authenticated/availability.tsx`) forces a server selection first (like Recherche) and scopes both tabs to it: "Personnages" filters `characters` by `character.server`, "Métiers" filters `jobs` by `job.server` — each server's characters/jobs get independent availability + price. `_authenticated/characters.tsx` follows the same shape: one server picker shared by both tabs, `CharacterForm`/`JobForm` take that `server` as a prop instead of asking for it again, and `JobForm`'s character picker only lists characters already scoped to that server.
 
 ### Data layer: strategy pattern (mock vs real API)
 
@@ -49,8 +51,10 @@ Everything that touches data goes through the `ApiClient` interface (`src/lib/ap
 
 Several things extend beyond the literal cahier des charges, all intentional and user-approved:
 - `Character` carries a `level` field (the documented API only has `name`/`server`/`class`).
-- `Job` (`getJobs`/`setJob`/`deleteJob`) is a standalone resource not in the cahier des charges: professions are per-account-per-server in the game (every character a user has on a given server shares the same job levels), not per-character, so it can't be modeled as a character field. `setJob` upserts by `(server, job)`.
+- `Job` (`getJobs`/`setJob`/`deleteJob`) is a standalone resource not in the cahier des charges: professions are per-account-per-server in the game (every character a user has on a given server shares the same job levels), not per-character, so it can't be modeled as a character field. `setJob` upserts by `(server, job)`. `Job.characterId` is *not* an ownership relationship — it's just which of the account's characters on that server to display/whisper alongside the job (picked explicitly in `JobForm` via `CharacterSelect`), since the level itself still applies account-wide.
 - `ApiClient.getMyAvailabilities` / `HttpApiClient`'s `GET /availability/me` aren't in the cahier des charges — the frontend needs to know which of the current user's characters are already available today, and no documented route provides that. See the comment in `http-api-client.ts`.
+- `JobAvailability` (`getMyJobAvailabilities`/`setJobAvailability`/`removeJobAvailability`) mirrors `Availability` but keyed by `jobId` instead of `characterId` — a job can be "available for hire" (with its own free/paid + price) independently of any character, for the same reason `Job` itself is a standalone resource.
+- `searchJobHelpers`/`GET /job-helpers` is a second, separate search endpoint (not in the cahier des charges, which only documents `/helpers`) for browsing jobs marked available for craft — `JobSearchFilters` requires both `server` and `job` (no "browse everything" mode, unlike character search where server is required but class isn't).
 
 ### Theming
 
@@ -58,7 +62,7 @@ Several things extend beyond the literal cahier des charges, all intentional and
 
 ### Components
 
-Organized by domain under `src/components/`: `auth/`, `characters/` (includes the "Mes métiers" job form/list, separate from the character form/list), `availability/`, `search/`, `home/`, plus `layout/` (shell, bottom nav, header) and `shared/` (things reused across domains: `ClassAvatar`/`ClassDot`, `ServerSelect`/`ClassSelect`/`JobSelect`, `CopyCommandButton`). Route files under `src/routes/` stay thin — they wire `useAuth()`/`getApiClient()` to these components rather than containing UI logic themselves.
+Organized by domain under `src/components/`: `auth/`, `characters/` (includes the "Mes métiers" job form/list, separate from the character form/list), `availability/`, `search/` (character search + a parallel `JobSearch*` family for the "Métiers" tab, each owning its own filters/fetch so it only runs while its `TabsContent` is mounted — Base UI unmounts inactive tab panels by default), `home/`, plus `layout/` (shell, bottom nav, header) and `shared/` (things reused across domains: `ClassAvatar`/`ClassDot`, `ServerSelect`/`ClassSelect`/`JobSelect`/`CharacterSelect`, `CopyCommandButton`). Route files under `src/routes/` stay thin — they wire `useAuth()`/`getApiClient()` to these components rather than containing UI logic themselves.
 
 `CharacterForm` intentionally has no effect resyncing its fields to the `editingCharacter` prop — the parent (`routes/_authenticated/characters.tsx`) remounts it via `key={editingCharacter?.id ?? "new"}` instead (React's recommended way to reset state on identity change, and required by this repo's `react-hooks/set-state-in-effect` lint rule).
 

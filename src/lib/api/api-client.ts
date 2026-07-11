@@ -6,7 +6,11 @@ import type {
   CharacterInput,
   HelperSearchResult,
   Job,
+  JobAvailability,
+  JobAvailabilityInput,
   JobInput,
+  JobSearchFilters,
+  JobSearchResult,
   LoginInput,
   RegisterInput,
   SearchFilters,
@@ -55,5 +59,20 @@ export interface ApiClient {
   ): Promise<Availability>
   removeAvailability(token: string, characterId: string): Promise<void>
 
+  // Being "available" for a job (e.g. crafting for hire) is tracked
+  // separately from character availability — a job isn't a character (see
+  // Job in lib/types.ts), so it needs its own availability + price.
+  getMyJobAvailabilities(token: string): Promise<JobAvailability[]>
+  setJobAvailability(
+    token: string,
+    input: JobAvailabilityInput
+  ): Promise<JobAvailability>
+  removeJobAvailability(token: string, jobId: string): Promise<void>
+
   searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]>
+
+  // Server + job are both required (see JobSearchFilters) — unlike
+  // searchHelpers there's no "browse everything" mode, you look up one
+  // specific job on one specific server.
+  searchJobHelpers(filters: JobSearchFilters): Promise<JobSearchResult[]>
 }

@@ -11,7 +11,8 @@ export const Route = createFileRoute("/_authenticated/")({
 })
 
 function HomeScreen() {
-  const { user, characters, availabilities } = useAuth()
+  const { user, characters, availabilities, jobs, jobAvailabilities } =
+    useAuth()
   const navigate = useNavigate()
 
   return (
@@ -20,12 +21,17 @@ function HomeScreen() {
         Salut {user?.username}, voici ta journée.
       </p>
 
-      <div className="mb-5.5 flex gap-3">
+      <div className="mb-5.5 flex gap-2.5">
         <StatCard label="Personnages" value={characters.length} accent="primary" />
         <StatCard
-          label="Dispo aujourd'hui"
+          label="Perso dispo"
           value={availabilities.length}
           accent="accent"
+        />
+        <StatCard
+          label="Métier dispo"
+          value={jobAvailabilities.length}
+          accent="info"
         />
       </div>
 
@@ -42,6 +48,8 @@ function HomeScreen() {
       <TodaysAvailabilityList
         characters={characters}
         availabilities={availabilities}
+        jobs={jobs}
+        jobAvailabilities={jobAvailabilities}
       />
     </div>
   )

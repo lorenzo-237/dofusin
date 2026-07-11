@@ -1,14 +1,16 @@
 import * as React from "react"
 
+import { CharacterSelect } from "@/components/shared/character-select"
 import { JobSelect } from "@/components/shared/job-select"
-import { ServerSelect } from "@/components/shared/server-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ApiError } from "@/lib/api"
-import { JOBS, SERVERS } from "@/lib/game-data"
-import type { Job, JobInput } from "@/lib/types"
+import { JOBS } from "@/lib/game-data"
+import type { Character, Job, JobInput } from "@/lib/types"
 
 interface JobFormProps {
+  server: string
+  characters: Character[]
   editingJob: Job | null
   onSubmit: (values: JobInput) => Promise<void>
   onCancelEdit: () => void
@@ -17,16 +19,24 @@ interface JobFormProps {
 /**
  * Jobs are per-account-per-server (not per-character, see Job in
  * lib/types.ts) — this form always upserts by (server, job): submitting an
- * existing pair just updates its level.
+ * existing pair just updates its level/character. `characterId` is only
+ * which character to show (and whisper) alongside this job, picked from
+ * `characters` (already scoped to `server` by the caller).
  *
  * Fields are only initialized from `editingJob` on mount — the parent must
  * render this with `key={editingJob?.id ?? "new"}` so switching between
  * "add" and "edit X" remounts it with fresh values (same pattern as
  * CharacterForm).
  */
-export function JobForm({ editingJob, onSubmit, onCancelEdit }: JobFormProps) {
-  const [server, setServer] = React.useState<string>(
-    editingJob?.server ?? SERVERS[0]
+export function JobForm({
+  server,
+  characters,
+  editingJob,
+  onSubmit,
+  onCancelEdit,
+}: JobFormProps) {
+  const [characterId, setCharacterId] = React.useState<string>(
+    editingJob?.characterId ?? characters[0]?.id ?? ""
   )
   const [job, setJob] = React.useState<string>(editingJob?.job ?? JOBS[0])
   const [level, setLevel] = React.useState(editingJob?.level ?? "")
@@ -35,6 +45,10 @@ export function JobForm({ editingJob, onSubmit, onCancelEdit }: JobFormProps) {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault()
+    if (!characterId) {
+      setError("Choisis un personnage.")
+      return
+    }
     if (!level.trim()) {
       setError("Le niveau est requis.")
       return
@@ -42,7 +56,7 @@ export function JobForm({ editingJob, onSubmit, onCancelEdit }: JobFormProps) {
     setError("")
     setIsSubmitting(true)
     try {
-      await onSubmit({ server, job, level: level.trim() })
+      await onSubmit({ server, characterId, job, level: level.trim() })
       if (!editingJob) {
         setLevel("")
       }
@@ -57,11 +71,15 @@ export function JobForm({ editingJob, onSubmit, onCancelEdit }: JobFormProps) {
     <div className="rounded-2xl border border-border bg-card p-4.5">
       <div className="mb-3 font-heading text-[15px] font-bold">
         {editingJob ? "Modifier le métier" : "Ajouter un métier"}
+        <span className="ml-1.5 font-sans text-xs font-normal text-muted-foreground">
+          sur {server}
+        </span>
       </div>
       <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
-        <ServerSelect
-          value={server}
-          onValueChange={setServer}
+        <CharacterSelect
+          value={characterId}
+          onValueChange={setCharacterId}
+          characters={characters}
           className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         <JobSelect

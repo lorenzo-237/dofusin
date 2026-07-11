@@ -18,7 +18,6 @@ export function CharacterListItem({
       <div className="flex-1">
         <div className="text-sm font-bold">{character.name}</div>
         <div className="flex items-center gap-1 text-xs text-muted-foreground">
-          <span>{character.server} ·</span>
           <ClassIcon characterClass={character.class} />
           <span>
             {character.class}
