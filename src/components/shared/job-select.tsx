@@ -1,11 +1,13 @@
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { JOBS } from "@/lib/game-data"
+import { JOBS, JOBS_BY_CATEGORY } from "@/lib/game-data"
 
 interface JobSelectProps {
   value: string
@@ -28,10 +30,15 @@ export function JobSelect({ value, onValueChange, className }: JobSelectProps) {
         <SelectValue placeholder="Métier" />
       </SelectTrigger>
       <SelectContent>
-        {JOBS.map((job) => (
-          <SelectItem key={job} value={job}>
-            {job}
-          </SelectItem>
+        {Object.entries(JOBS_BY_CATEGORY).map(([category, jobs]) => (
+          <SelectGroup key={category}>
+            <SelectLabel>{category}</SelectLabel>
+            {jobs.map((job) => (
+              <SelectItem key={job} value={job}>
+                {job}
+              </SelectItem>
+            ))}
+          </SelectGroup>
         ))}
       </SelectContent>
     </Select>

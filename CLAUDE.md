@@ -58,7 +58,7 @@ Several things extend beyond the literal cahier des charges, all intentional and
 
 ### Theming
 
-`src/index.css` overrides the shadcn CSS variables with the Dofus-Dispo palette (cream background, forest green primary, gold accent, terracotta destructive) and swaps the font stack to Baloo 2 (`--font-heading`, via `@fontsource-variable/baloo-2`) and Quicksand (`--font-sans`, via `@fontsource-variable/quicksand`). Game data constants (`SERVERS`, `CLASSES`, `CLASS_COLORS`) live in `src/lib/game-data.ts`.
+`src/index.css` overrides the shadcn CSS variables with the Dofus-Dispo palette (cream background, forest green primary, gold accent, terracotta destructive) and swaps the font stack to Baloo 2 (`--font-heading`, via `@fontsource-variable/baloo-2`) and Quicksand (`--font-sans`, via `@fontsource-variable/quicksand`). Game data constants (`SERVERS`, `CLASSES`, `CLASS_COLORS`) live in `src/lib/game-data.ts`. Jobs are grouped by real in-game category (`JOBS_BY_CATEGORY`: Forgemagie, Récolte, Craft — 20 jobs total), with `JOBS` derived as the flattened list (still the source of the `JobName` union) and `JOB_COLORS` assigned per category family; `JobSelect` renders the three categories as `SelectGroup`/`SelectLabel` sections rather than a flat list.
 
 ### Components
 

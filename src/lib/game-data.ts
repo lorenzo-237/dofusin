@@ -33,16 +33,62 @@ export const CLASSES = [
 
 export type CharacterClass = (typeof CLASSES)[number]
 
-// TODO(user): liste de départ à compléter avec les vrais métiers du jeu.
-export const JOBS = ["Alchimiste", "Bûcheron", "Forgeron", "Mineur"] as const
+export const JOBS_BY_CATEGORY = {
+  Forgemagie: [
+    "Cordomage",
+    "Costumage",
+    "Façomage",
+    "Forgemage",
+    "Joaillomage",
+    "Sculptemage",
+  ],
+  Récolte: ["Alchimiste", "Bûcheron", "Chasseur", "Mineur", "Paysan", "Pêcheur"],
+  Craft: [
+    "Bijoutier",
+    "Bricoleur",
+    "Cordonnier",
+    "Eleveur",
+    "Façonneur",
+    "Forgeron",
+    "Sculpteur",
+    "Tailleur",
+  ],
+} as const satisfies Record<string, readonly string[]>
+
+export type JobCategory = keyof typeof JOBS_BY_CATEGORY
+
+export const JOBS = [
+  ...JOBS_BY_CATEGORY.Forgemagie,
+  ...JOBS_BY_CATEGORY.Récolte,
+  ...JOBS_BY_CATEGORY.Craft,
+] as const
 
 export type JobName = (typeof JOBS)[number]
 
 export const JOB_COLORS: Record<JobName, string> = {
-  Alchimiste: "#8E5FBF",
+  // Forgemagie
+  Cordomage: "#7C5CD9",
+  Costumage: "#A66BC9",
+  Façomage: "#B07CC6",
+  Forgemage: "#8E5FBF",
+  Joaillomage: "#9B59B6",
+  Sculptemage: "#6B4FA0",
+  // Récolte
+  Alchimiste: "#5FA3A3",
   Bûcheron: "#6B8E4E",
-  Forgeron: "#B5651D",
+  Chasseur: "#4E8B6B",
   Mineur: "#7A7A7A",
+  Paysan: "#8AA84E",
+  Pêcheur: "#4A90A4",
+  // Craft
+  Bijoutier: "#D9A227",
+  Bricoleur: "#D97706",
+  Cordonnier: "#A0522D",
+  Eleveur: "#8A6D3B",
+  Façonneur: "#C97B3D",
+  Forgeron: "#B5651D",
+  Sculpteur: "#B3563F",
+  Tailleur: "#C0533B",
 }
 
 export function jobColor(job: string): string {
