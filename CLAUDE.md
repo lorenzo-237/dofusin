@@ -4,7 +4,7 @@ Guidance for Claude Code (and other agents) working in this repo.
 
 ## What this is
 
-Dofus-Dispo: a desktop app (Tauri) that lets players mark one of their game characters as "available to help" for the day, and lets other players search for available helpers. Full spec in `project/cahier_charges.md` (French). The UI design comes from a Claude Design handoff extracted in `project/handoff_extracted/application-dofus-dispo/project/` — `AppShell Mobile.dc.html` is the source of truth for layout/copy/behavior (the only view that was retained; ignore the "Candy"/"Warm" desktop variants in that folder, they were abandoned explorations).
+DofusIn (repo/package name stayed `dofus-dispo`, product name is `DofusIn`): a desktop app (Tauri) that lets players mark one of their game characters as "available to help" for the day, and lets other players search for available helpers. Full spec in `project/cahier_charges.md` (French). The UI design comes from a Claude Design handoff extracted in `project/handoff_extracted/application-dofus-dispo/project/` — `AppShell Mobile.dc.html` is the source of truth for layout/copy/behavior (the only view that was retained; ignore the "Candy"/"Warm" desktop variants in that folder, they were abandoned explorations).
 
 ## Stack
 
@@ -34,7 +34,7 @@ Verify changes with `npm run typecheck`, `npm run lint`, and `npm run build` onl
 File-based TanStack Router under `src/routes/`:
 - `__root.tsx` — mounts `AuthProvider`, `MobileShell`, the sonner `Toaster`.
 - `login.tsx`, `register.tsx` — redirect to `/` if a session already exists.
-- `_authenticated.tsx` — pathless layout route; `beforeLoad` redirects to `/login` if there's no session. Renders the fixed header (title read from the active route's `staticData.title`, see `src/lib/router-static-data.d.ts`) and the bottom nav, with `<Outlet/>` scrolling in between.
+- `_authenticated.tsx` — pathless layout route; `beforeLoad` redirects to `/login` if there's no session. Renders the scrollable `<Outlet/>` and the bottom nav; the page title/header lives in the always-on `TitleBar` (see [Custom title bar](#custom-title-bar)), not in this route.
 - `_authenticated/index.tsx` (Accueil), `characters.tsx`, `availability.tsx`, `search.tsx`.
 
 Auth guards read a plain module-level store (`src/lib/auth-store.ts`), not React state — `beforeLoad` runs outside components, so it can't use `useAuth()`. `AuthProvider` (`src/context/auth-context.tsx`) subscribes to that same store via `useSyncExternalStore` to expose it reactively (`useAuth()`), and also owns `characters`/`jobs`/`availabilities`/`jobAvailabilities` plus all their CRUD actions so screens stay thin.
@@ -60,6 +60,10 @@ Several things extend beyond the literal cahier des charges, all intentional and
 
 `src/index.css` overrides the shadcn CSS variables with the Dofus-Dispo palette (cream background, forest green primary, gold accent, terracotta destructive) and swaps the font stack to Baloo 2 (`--font-heading`, via `@fontsource-variable/baloo-2`) and Quicksand (`--font-sans`, via `@fontsource-variable/quicksand`). Game data constants (`SERVERS`, `CLASSES`, `CLASS_COLORS`) live in `src/lib/game-data.ts`. Jobs are grouped by real in-game category (`JOBS_BY_CATEGORY`: Forgemagie, Récolte, Craft — 20 jobs total), with `JOBS` derived as the flattened list (still the source of the `JobName` union) and `JOB_COLORS` assigned per category family; `JobSelect` renders the three categories as `SelectGroup`/`SelectLabel` sections rather than a flat list.
 
+### Branding
+
+`public/assets/icon.svg` (square app icon) and `public/assets/lockup.svg` (icon + "Dofus"+"In" wordmark, "In" in primary green) are the source brand assets. `src-tauri/icons/` is generated from `icon.svg` via `npx tauri icon public/assets/icon.svg -o src-tauri/icons` (regenerate the same way if the icon changes — don't hand-edit those PNGs/ICO/ICNS). The web favicon (`index.html`) points at `icon.svg` directly. `BrandHeader` (login/register) renders `lockup.svg` as-is. The custom title bar (`title-bar.tsx`) can't reuse the lockup because its green background would swallow the green "In" — it renders the icon plus a text wordmark with "In" at reduced opacity instead.
+
 ### Components
 
 Organized by domain under `src/components/`: `auth/`, `characters/` (includes the "Mes métiers" job form/list, separate from the character form/list), `availability/`, `search/` (character search + a parallel `JobSearch*` family for the "Métiers" tab, each owning its own filters/fetch so it only runs while its `TabsContent` is mounted — Base UI unmounts inactive tab panels by default), `home/`, plus `layout/` (shell, bottom nav, header) and `shared/` (things reused across domains: `ClassAvatar`/`ClassDot`, `ServerSelect`/`ClassSelect`/`JobSelect`/`CharacterSelect`, `CopyCommandButton`). Route files under `src/routes/` stay thin — they wire `useAuth()`/`getApiClient()` to these components rather than containing UI logic themselves.
@@ -68,7 +72,7 @@ Organized by domain under `src/components/`: `auth/`, `characters/` (includes th
 
 ### Custom title bar
 
-`layout/title-bar.tsx` replaces the native OS title bar (disabled via `decorations: false` in `tauri.conf.json`) so it can be styled with the app palette instead of system chrome. It only renders when `isTauri()` (from `@tauri-apps/api/core`) is true, so it's a no-op in a plain browser tab during `npm run dev`. Dragging works via the `data-tauri-drag-region` attribute (not JS); minimize/close call `getCurrentWindow()` from `@tauri-apps/api/window`, which requires the `core:window:allow-close`/`allow-minimize`/`allow-start-dragging` permissions explicitly granted in `src-tauri/capabilities/default.json` (`core:default` alone doesn't include them). No maximize button — the window is meant to stay phone-shaped.
+`layout/title-bar.tsx` replaces the native OS title bar (disabled via `decorations: false` in `tauri.conf.json`) so it can be styled with the app palette instead of system chrome — and, since there was no room to spare on a 430px-wide window, it also doubles as the in-app header: it reads the current page title the same way the old `ProtectedHeader` did (`useMatches()` + `staticData.title`, see `src/lib/router-static-data.d.ts`), centers it via absolute positioning (so it stays centered regardless of how wide the left icon / right button group are), and owns the burger menu (theme switch + logout, only rendered when `useAuth().user` is set). Unlike the old split (Tauri-only title bar + separate always-rendered `ProtectedHeader`), this single bar is now always rendered — including in a plain browser tab during `npm run dev` — so the page title and burger menu stay reachable there; only the window controls are gated behind `isTauri()` (from `@tauri-apps/api/core`). Dragging works via the `data-tauri-drag-region` attribute (not JS); minimize/close call `getCurrentWindow()` from `@tauri-apps/api/window`, which requires the `core:window:allow-close`/`allow-minimize`/`allow-start-dragging` permissions explicitly granted in `src-tauri/capabilities/default.json` (`core:default` alone doesn't include them). No maximize button — the window is meant to stay phone-shaped. `_authenticated.tsx` no longer renders a header itself, just the scrollable `<Outlet/>` and `<BottomNav/>`.
 
 ## Conventions
 

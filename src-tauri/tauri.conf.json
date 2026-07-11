@@ -1,8 +1,8 @@
 {
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
-  "productName": "dofus-dispo",
+  "productName": "DofusIn",
   "version": "0.1.0",
-  "identifier": "com.tauri.dev",
+  "identifier": "com.dofusin.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:5173",
@@ -12,7 +12,7 @@
   "app": {
     "windows": [
       {
-        "title": "dofus-dispo",
+        "title": "DofusIn",
         "width": 430,
         "height": 900,
         "minWidth": 380,

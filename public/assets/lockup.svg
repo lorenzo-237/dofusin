@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 520 140" width="520" height="140">
+  <rect width="520" height="140" fill="none"></rect>
+  <rect x="10" y="10" width="120" height="120" rx="28" fill="#3F7A54"></rect>
+  <circle cx="108" cy="30" r="10" fill="#E0A63A" stroke="#FBF6EC" stroke-width="3"></circle>
+  <text x="70" y="98" font-family="&#39;Baloo 2&#39;, &#39;Arial Rounded MT Bold&#39;, sans-serif" font-weight="800" font-size="66" fill="#FBF6EC" text-anchor="middle">D</text>
+  <text x="150" y="90" font-family="&#39;Baloo 2&#39;, &#39;Arial Rounded MT Bold&#39;, sans-serif" font-weight="700" font-size="58" fill="#2E2A22">Dofus<tspan fill="#3F7A54">In</tspan></text>
+</svg>

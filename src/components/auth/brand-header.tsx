@@ -1,10 +1,11 @@
 export function BrandHeader() {
   return (
     <div className="mb-6.5 flex items-center gap-2.5">
-      <div className="flex size-[38px] items-center justify-center rounded-[10px] bg-primary font-heading font-bold text-primary-foreground">
-        DD
+      <img src="/assets/icon.svg" alt="" className="size-9.5 rounded-[10px]" />
+      <div className="font-heading text-[22px] font-bold">
+        <span className="text-foreground">Dofus</span>
+        <span className="text-primary">In</span>
       </div>
-      <div className="font-heading text-[19px] font-bold">Dofus-Dispo</div>
     </div>
   )
 }
