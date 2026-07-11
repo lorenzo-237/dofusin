@@ -1,13 +1,46 @@
+export const SERVERS_BY_CATEGORY = {
+  Dofus: [
+    "Brial",
+    "Dakal",
+    "Draconiros",
+    "Hell Mina",
+    "Imagiro",
+    "Kourial",
+    "Mikhal",
+    "Ombre",
+    "Orumkam",
+    "Rafal",
+    "Salar",
+    "Tal Kasha",
+    "Tylezia",
+  ],
+  "Dofus Retro": ["Allisteria", "Boune", "Fallanster"],
+  "Dofus Touch": ["Blair", "Kelerog", "Talok", "Tiliwan"],
+} as const satisfies Record<string, readonly string[]>
+
+export type ServerCategory = keyof typeof SERVERS_BY_CATEGORY
+
 export const SERVERS = [
-  "Emeraldia",
-  "Sablonoir",
-  "Brumeval",
-  "Écarlate",
-  "Nordhaven",
-  "Valorune",
+  ...SERVERS_BY_CATEGORY.Dofus,
+  ...SERVERS_BY_CATEGORY["Dofus Retro"],
+  ...SERVERS_BY_CATEGORY["Dofus Touch"],
 ] as const
 
 export type Server = (typeof SERVERS)[number]
+
+function categoryOf<C extends string>(
+  byCategory: Record<C, readonly string[]>,
+  item: string
+): C {
+  const entry = (Object.entries(byCategory) as [C, readonly string[]][]).find(
+    ([, items]) => items.includes(item)
+  )
+  return entry?.[0] ?? (Object.keys(byCategory)[0] as C)
+}
+
+export function serverCategory(server: string): ServerCategory {
+  return categoryOf(SERVERS_BY_CATEGORY, server)
+}
 
 export const CLASSES = [
   "Cra",
@@ -34,15 +67,6 @@ export const CLASSES = [
 export type CharacterClass = (typeof CLASSES)[number]
 
 export const JOBS_BY_CATEGORY = {
-  Forgemagie: [
-    "Cordomage",
-    "Costumage",
-    "Façomage",
-    "Forgemage",
-    "Joaillomage",
-    "Sculptemage",
-  ],
-  Récolte: ["Alchimiste", "Bûcheron", "Chasseur", "Mineur", "Paysan", "Pêcheur"],
   Craft: [
     "Bijoutier",
     "Bricoleur",
@@ -52,6 +76,22 @@ export const JOBS_BY_CATEGORY = {
     "Forgeron",
     "Sculpteur",
     "Tailleur",
+  ],
+  Forgemagie: [
+    "Cordomage",
+    "Costumage",
+    "Façomage",
+    "Forgemage",
+    "Joaillomage",
+    "Sculptemage",
+  ],
+  Récolte: [
+    "Alchimiste",
+    "Bûcheron",
+    "Chasseur",
+    "Mineur",
+    "Paysan",
+    "Pêcheur",
   ],
 } as const satisfies Record<string, readonly string[]>
 
@@ -64,6 +104,10 @@ export const JOBS = [
 ] as const
 
 export type JobName = (typeof JOBS)[number]
+
+export function jobCategory(job: string): JobCategory {
+  return categoryOf(JOBS_BY_CATEGORY, job)
+}
 
 export const JOB_COLORS: Record<JobName, string> = {
   // Forgemagie
