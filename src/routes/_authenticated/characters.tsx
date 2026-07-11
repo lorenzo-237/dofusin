@@ -8,7 +8,7 @@ import { JobList } from "@/components/characters/job-list"
 import { ServerSelect } from "@/components/shared/server-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/auth-context"
-import { SERVERS } from "@/lib/game-data"
+import { getLastServer, setLastServer } from "@/lib/last-selection-store"
 import type { Character, CharacterInput, Job, JobInput } from "@/lib/types"
 
 export const Route = createFileRoute("/_authenticated/characters")({
@@ -27,13 +27,14 @@ function CharactersScreen() {
     deleteJob,
   } = useAuth()
 
-  const [server, setServer] = React.useState<string>(SERVERS[0])
+  const [server, setServer] = React.useState<string>(getLastServer())
   const [editingCharacter, setEditingCharacter] =
     React.useState<Character | null>(null)
   const [editingJob, setEditingJob] = React.useState<Job | null>(null)
 
   const handleServerChange = (nextServer: string) => {
     setServer(nextServer)
+    setLastServer(nextServer)
     setEditingCharacter(null)
     setEditingJob(null)
   }

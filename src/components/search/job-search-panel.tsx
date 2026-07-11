@@ -3,20 +3,23 @@ import * as React from "react"
 import { JobSearchFiltersCard } from "@/components/search/job-search-filters-card"
 import { JobSearchResultsList } from "@/components/search/job-search-results-list"
 import { getApiClient } from "@/lib/api"
-import { JOBS, SERVERS } from "@/lib/game-data"
+import {
+  getLastJob,
+  getLastServer,
+  setLastJob,
+  setLastServer,
+} from "@/lib/last-selection-store"
 import type { JobSearchFilters, JobSearchResult } from "@/lib/types"
-
-const EMPTY_FILTERS: JobSearchFilters = {
-  server: SERVERS[0],
-  job: JOBS[0],
-}
 
 /**
  * Owns its own filters/fetch so it only runs while the "Métiers" tab is
  * mounted (TabsContent unmounts inactive panels by default).
  */
 export function JobSearchPanel() {
-  const [filters, setFilters] = React.useState<JobSearchFilters>(EMPTY_FILTERS)
+  const [filters, setFilters] = React.useState<JobSearchFilters>({
+    server: getLastServer(),
+    job: getLastJob(),
+  })
   const [results, setResults] = React.useState<JobSearchResult[]>([])
   const [isPending, startTransition] = React.useTransition()
 
@@ -35,7 +38,11 @@ export function JobSearchPanel() {
     <div>
       <JobSearchFiltersCard
         filters={filters}
-        onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+        onChange={(patch) => {
+          setFilters((prev) => ({ ...prev, ...patch }))
+          if (patch.server) setLastServer(patch.server)
+          if (patch.job) setLastJob(patch.job)
+        }}
       />
       <JobSearchResultsList results={results} isLoading={isPending} />
     </div>

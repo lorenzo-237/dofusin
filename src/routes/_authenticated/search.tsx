@@ -6,7 +6,7 @@ import { SearchFiltersCard } from "@/components/search/search-filters-card"
 import { SearchResultsList } from "@/components/search/search-results-list"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { getApiClient } from "@/lib/api"
-import { SERVERS } from "@/lib/game-data"
+import { getLastServer, setLastServer } from "@/lib/last-selection-store"
 import type { HelperSearchResult, SearchFilters } from "@/lib/types"
 
 export const Route = createFileRoute("/_authenticated/search")({
@@ -14,14 +14,12 @@ export const Route = createFileRoute("/_authenticated/search")({
   component: SearchScreen,
 })
 
-const EMPTY_FILTERS: SearchFilters = {
-  server: SERVERS[0],
-  class: "",
-  minLevel: "",
-}
-
 function SearchScreen() {
-  const [filters, setFilters] = React.useState<SearchFilters>(EMPTY_FILTERS)
+  const [filters, setFilters] = React.useState<SearchFilters>({
+    server: getLastServer(),
+    class: "",
+    minLevel: "",
+  })
   const [results, setResults] = React.useState<HelperSearchResult[]>([])
   const [isPending, startTransition] = React.useTransition()
 
@@ -51,7 +49,10 @@ function SearchScreen() {
         <TabsContent value="characters">
           <SearchFiltersCard
             filters={filters}
-            onChange={(patch) => setFilters((prev) => ({ ...prev, ...patch }))}
+            onChange={(patch) => {
+              setFilters((prev) => ({ ...prev, ...patch }))
+              if (patch.server) setLastServer(patch.server)
+            }}
           />
           <SearchResultsList results={results} isLoading={isPending} />
         </TabsContent>

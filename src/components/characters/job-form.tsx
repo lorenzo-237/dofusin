@@ -5,7 +5,7 @@ import { JobSelect } from "@/components/shared/job-select"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ApiError } from "@/lib/api"
-import { JOBS } from "@/lib/game-data"
+import { getLastJob, setLastJob } from "@/lib/last-selection-store"
 import type { Character, Job, JobInput } from "@/lib/types"
 
 interface JobFormProps {
@@ -38,7 +38,9 @@ export function JobForm({
   const [characterId, setCharacterId] = React.useState<string>(
     editingJob?.characterId ?? characters[0]?.id ?? ""
   )
-  const [job, setJob] = React.useState<string>(editingJob?.job ?? JOBS[0])
+  const [job, setJob] = React.useState<string>(
+    editingJob?.job ?? getLastJob()
+  )
   const [level, setLevel] = React.useState(editingJob?.level ?? "")
   const [error, setError] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
@@ -84,7 +86,10 @@ export function JobForm({
         />
         <JobSelect
           value={job}
-          onValueChange={setJob}
+          onValueChange={(next) => {
+            setJob(next)
+            setLastJob(next)
+          }}
           className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         <Input

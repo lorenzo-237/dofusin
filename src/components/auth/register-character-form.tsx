@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ClassSelect } from "@/components/shared/class-select"
 import { ServerSelect } from "@/components/shared/server-select"
-import { CLASSES, SERVERS } from "@/lib/game-data"
+import { CLASSES } from "@/lib/game-data"
+import { getLastServer, setLastServer } from "@/lib/last-selection-store"
 import type { CharacterInput } from "@/lib/types"
 
 interface RegisterCharacterFormProps {
@@ -19,7 +20,7 @@ export function RegisterCharacterForm({
   onSubmit,
 }: RegisterCharacterFormProps) {
   const [name, setName] = React.useState("")
-  const [server, setServer] = React.useState<string>(SERVERS[0])
+  const [server, setServer] = React.useState<string>(getLastServer())
   const [characterClass, setCharacterClass] = React.useState<string>(
     CLASSES[0]
   )
@@ -52,7 +53,10 @@ export function RegisterCharacterForm({
       />
       <ServerSelect
         value={server}
-        onValueChange={setServer}
+        onValueChange={(next) => {
+          setServer(next)
+          setLastServer(next)
+        }}
         className="h-auto w-full rounded-xl px-3.5 py-3.5 text-base"
       />
       <ClassSelect

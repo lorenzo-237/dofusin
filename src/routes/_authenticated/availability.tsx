@@ -7,7 +7,7 @@ import { JobAvailabilityList } from "@/components/availability/job-availability-
 import { ServerSelect } from "@/components/shared/server-select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/auth-context"
-import { SERVERS } from "@/lib/game-data"
+import { getLastServer, setLastServer } from "@/lib/last-selection-store"
 import type {
   AvailabilityInput,
   Character,
@@ -33,7 +33,12 @@ function AvailabilityScreen() {
     removeJobAvailability,
   } = useAuth()
 
-  const [server, setServer] = React.useState<string>(SERVERS[0])
+  const [server, setServer] = React.useState<string>(getLastServer())
+
+  const handleServerChange = (nextServer: string) => {
+    setServer(nextServer)
+    setLastServer(nextServer)
+  }
 
   const serverCharacters = characters.filter((c) => c.server === server)
   const serverJobs = jobs.filter((j) => j.server === server)
@@ -133,7 +138,7 @@ function AvailabilityScreen() {
       </p>
       <ServerSelect
         value={server}
-        onValueChange={setServer}
+        onValueChange={handleServerChange}
         className="mb-4 h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
       />
 
