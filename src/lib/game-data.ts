@@ -98,9 +98,9 @@ export const JOBS_BY_CATEGORY = {
 export type JobCategory = keyof typeof JOBS_BY_CATEGORY
 
 export const JOBS = [
+  ...JOBS_BY_CATEGORY.Craft,
   ...JOBS_BY_CATEGORY.Forgemagie,
   ...JOBS_BY_CATEGORY.Récolte,
-  ...JOBS_BY_CATEGORY.Craft,
 ] as const
 
 export type JobName = (typeof JOBS)[number]
