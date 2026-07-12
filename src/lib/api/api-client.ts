@@ -32,8 +32,8 @@ export class ApiError extends Error {
  */
 export interface ApiClient {
   // Auth is Discord OAuth2 only — no password is ever stored. `code` is the
-  // authorization code obtained via the OS deep link (or a placeholder
-  // outside Tauri, see AuthProvider.loginWithDiscord).
+  // authorization code obtained via the local loopback server (or a
+  // placeholder outside Tauri, see AuthProvider.loginWithDiscord).
   loginWithDiscord(code: string): Promise<AuthSession>
 
   getCharacters(token: string): Promise<Character[]>

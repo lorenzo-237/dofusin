@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import * as React from "react"
-import { isTauri } from "@tauri-apps/api/core"
-import { onOpenUrl } from "@tauri-apps/plugin-deep-link"
+import { invoke, isTauri } from "@tauri-apps/api/core"
+import { listen } from "@tauri-apps/api/event"
 import { openUrl } from "@tauri-apps/plugin-opener"
 
 import { getApiClient } from "@/lib/api"
@@ -18,7 +18,11 @@ import type {
   User,
 } from "@/lib/types"
 
-const DISCORD_REDIRECT_URI = "dofusin://auth/callback"
+// Discord OAuth2 rejects custom URI schemes as redirect_uri — this loopback
+// server (started Rust-side, see src-tauri/src/oauth.rs) is the RFC 8252
+// pattern for native apps instead. Fixed port because Discord requires an
+// exact, pre-registered redirect_uri.
+const DISCORD_REDIRECT_URI = "http://localhost:48991/callback"
 
 export class CancelledLoginError extends Error {
   constructor() {
@@ -110,42 +114,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [token])
 
-  // Resolved/rejected by the onOpenUrl listener below once Discord redirects
-  // back through the `dofusin://` deep link — kept in a ref so the listener
-  // (registered once, at the provider level) can settle whatever promise
-  // loginWithDiscord() is currently awaiting.
+  // Resolved/rejected by the oauth://callback listener below once Discord
+  // redirects back to the local loopback server — kept in a ref so the
+  // listener (registered once, at the provider level) can settle whatever
+  // promise loginWithDiscord() is currently awaiting.
   const pendingLoginRef = React.useRef<{
     state: string
-    resolve: () => void
+    resolve: (code: string) => void
     reject: (reason: unknown) => void
   } | null>(null)
 
   React.useEffect(() => {
     if (!isTauri()) return
-    const unlistenPromise = onOpenUrl((urls) => {
+    const unlistenPromise = listen<string>("oauth://callback", (event) => {
       const pending = pendingLoginRef.current
       if (!pending) return
-      const url = urls[0]
-      if (!url) return
 
-      let parsed: URL
-      try {
-        parsed = new URL(url)
-      } catch {
-        return
-      }
-      const code = parsed.searchParams.get("code")
-      const state = parsed.searchParams.get("state")
+      const params = new URLSearchParams(event.payload)
+      const code = params.get("code")
+      const state = params.get("state")
       if (!code || state !== pending.state) return
 
       pendingLoginRef.current = null
-      getApiClient()
-        .loginWithDiscord(code)
-        .then((nextSession) => {
-          setSession(nextSession)
-          pending.resolve()
-        })
-        .catch(pending.reject)
+      pending.resolve(code)
     })
     return () => {
       void unlistenPromise.then((unlisten) => unlisten())
@@ -157,14 +148,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       isTauri() && import.meta.env.VITE_API_STRATEGY === "http"
 
     if (!isRealDiscordFlow) {
-      // No OS deep link outside Tauri, and nothing to actually exchange in
-      // mock strategy — skip the browser round-trip entirely.
+      // No loopback server outside Tauri, and nothing to actually exchange
+      // in mock strategy — skip the browser round-trip entirely.
       const nextSession = await getApiClient().loginWithDiscord("mock")
       setSession(nextSession)
       return
     }
 
-    await new Promise<void>((resolve, reject) => {
+    // Starts once per app run (no-op on later calls) — see oauth.rs.
+    await invoke("start_oauth_callback_server")
+
+    const code = await new Promise<string>((resolve, reject) => {
       const state = crypto.randomUUID()
       pendingLoginRef.current = { state, resolve, reject }
       const params = new URLSearchParams({
@@ -178,6 +172,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         `https://discord.com/api/v10/oauth2/authorize?${params.toString()}`
       ).catch(reject)
     })
+
+    const nextSession = await getApiClient().loginWithDiscord(code)
+    setSession(nextSession)
   }, [])
 
   const cancelDiscordLogin = React.useCallback(() => {
