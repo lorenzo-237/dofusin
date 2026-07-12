@@ -42,6 +42,13 @@ interface AuthContextValue {
   availabilities: Availability[]
   jobAvailabilities: JobAvailability[]
 
+  // Characters/jobs that were available on some previous day but aren't
+  // today — the settings (free/price) are still there, just not republished
+  // yet. Lets the Accueil screen offer "reactivate everything as it was".
+  staleAvailabilities: Availability[]
+  staleJobAvailabilities: JobAvailability[]
+  reactivateAll: () => Promise<void>
+
   loginWithDiscord: () => Promise<void>
   cancelDiscordLogin: () => void
   logout: () => void
@@ -74,6 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [jobAvailabilities, setJobAvailabilities] = React.useState<
     JobAvailability[]
   >([])
+  const [staleAvailabilities, setStaleAvailabilities] = React.useState<
+    Availability[]
+  >([])
+  const [staleJobAvailabilities, setStaleJobAvailabilities] = React.useState<
+    JobAvailability[]
+  >([])
 
   const token = session?.token ?? null
   // Derived (not synced via effect setState) so it naturally reads false
@@ -94,18 +107,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       client.getJobs(token),
       client.getMyAvailabilities(token),
       client.getMyJobAvailabilities(token),
+      client.getStaleAvailabilities(token),
+      client.getStaleJobAvailabilities(token),
     ]).then(
       ([
         nextCharacters,
         nextJobs,
         nextAvailabilities,
         nextJobAvailabilities,
+        nextStaleAvailabilities,
+        nextStaleJobAvailabilities,
       ]) => {
         if (cancelled) return
         setCharacters(nextCharacters)
         setJobs(nextJobs)
         setAvailabilities(nextAvailabilities)
         setJobAvailabilities(nextJobAvailabilities)
+        setStaleAvailabilities(nextStaleAvailabilities)
+        setStaleJobAvailabilities(nextStaleJobAvailabilities)
         setLoadedForToken(token)
       }
     )
@@ -188,12 +207,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setJobs([])
     setAvailabilities([])
     setJobAvailabilities([])
+    setStaleAvailabilities([])
+    setStaleJobAvailabilities([])
   }, [])
 
   const requireToken = React.useCallback(() => {
     if (!token) throw new Error("Non authentifié.")
     return token
   }, [token])
+
+  const reactivateAll = React.useCallback(async () => {
+    const activeToken = requireToken()
+    const [nextAvailabilities, nextJobAvailabilities] = await Promise.all([
+      getApiClient().reactivateAvailabilities(activeToken),
+      getApiClient().reactivateJobAvailabilities(activeToken),
+    ])
+    setAvailabilities(nextAvailabilities)
+    setJobAvailabilities(nextJobAvailabilities)
+    setStaleAvailabilities([])
+    setStaleJobAvailabilities([])
+  }, [requireToken])
 
   const createCharacter = React.useCallback(
     async (input: CharacterInput) => {
@@ -226,6 +259,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await getApiClient().deleteCharacter(activeToken, id)
       setCharacters((prev) => prev.filter((c) => c.id !== id))
       setAvailabilities((prev) => prev.filter((a) => a.characterId !== id))
+      setStaleAvailabilities((prev) =>
+        prev.filter((a) => a.characterId !== id)
+      )
     },
     [requireToken]
   )
@@ -245,6 +281,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       await getApiClient().deleteJob(activeToken, id)
       setJobs((prev) => prev.filter((j) => j.id !== id))
       setJobAvailabilities((prev) => prev.filter((a) => a.jobId !== id))
+      setStaleJobAvailabilities((prev) => prev.filter((a) => a.jobId !== id))
     },
     [requireToken]
   )
@@ -260,6 +297,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev.filter((a) => a.characterId !== input.characterId),
         availability,
       ])
+      // No longer stale — it's active today now.
+      setStaleAvailabilities((prev) =>
+        prev.filter((a) => a.characterId !== input.characterId)
+      )
     },
     [requireToken]
   )
@@ -286,6 +327,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         ...prev.filter((a) => a.jobId !== input.jobId),
         availability,
       ])
+      // No longer stale — it's active today now.
+      setStaleJobAvailabilities((prev) =>
+        prev.filter((a) => a.jobId !== input.jobId)
+      )
     },
     [requireToken]
   )
@@ -309,6 +354,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       jobs,
       availabilities,
       jobAvailabilities,
+      staleAvailabilities,
+      staleJobAvailabilities,
+      reactivateAll,
       loginWithDiscord,
       cancelDiscordLogin,
       logout,
@@ -330,6 +378,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       jobs,
       availabilities,
       jobAvailabilities,
+      staleAvailabilities,
+      staleJobAvailabilities,
+      reactivateAll,
       loginWithDiscord,
       cancelDiscordLogin,
       logout,

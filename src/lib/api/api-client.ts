@@ -59,6 +59,14 @@ export interface ApiClient {
   ): Promise<Availability>
   removeAvailability(token: string, characterId: string): Promise<void>
 
+  // Availability is one row per character (upserted, never deleted on
+  // expiry) — "stale" means the row's date isn't today, but the previous
+  // free/price settings are still right there. Lets the app offer
+  // "reactivate everything as it was" the next day instead of redoing it
+  // character by character.
+  getStaleAvailabilities(token: string): Promise<Availability[]>
+  reactivateAvailabilities(token: string): Promise<Availability[]>
+
   // Being "available" for a job (e.g. crafting for hire) is tracked
   // separately from character availability — a job isn't a character (see
   // Job in lib/types.ts), so it needs its own availability + price.
@@ -68,6 +76,10 @@ export interface ApiClient {
     input: JobAvailabilityInput
   ): Promise<JobAvailability>
   removeJobAvailability(token: string, jobId: string): Promise<void>
+
+  // Mirrors getStaleAvailabilities/reactivateAvailabilities for jobs.
+  getStaleJobAvailabilities(token: string): Promise<JobAvailability[]>
+  reactivateJobAvailabilities(token: string): Promise<JobAvailability[]>
 
   searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]>
 

@@ -254,6 +254,38 @@ export class MockApiClient implements ApiClient {
     saveDb(db)
   }
 
+  async getStaleJobAvailabilities(token: string): Promise<JobAvailability[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myJobIds = new Set(
+      db.jobs.filter((j) => j.userId === userId).map((j) => j.id)
+    )
+    const today = todayISODate()
+    return db.jobAvailabilities.filter(
+      (a) => myJobIds.has(a.jobId) && a.availableDate !== today
+    )
+  }
+
+  async reactivateJobAvailabilities(
+    token: string
+  ): Promise<JobAvailability[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myJobIds = new Set(
+      db.jobs.filter((j) => j.userId === userId).map((j) => j.id)
+    )
+    const today = todayISODate()
+    db.jobAvailabilities = db.jobAvailabilities.map((a) =>
+      myJobIds.has(a.jobId) ? { ...a, availableDate: today } : a
+    )
+    saveDb(db)
+    return db.jobAvailabilities.filter(
+      (a) => myJobIds.has(a.jobId) && a.availableDate === today
+    )
+  }
+
   async getMyAvailabilities(token: string): Promise<Availability[]> {
     await delay()
     const db = loadDb()
@@ -297,6 +329,36 @@ export class MockApiClient implements ApiClient {
       (a) => a.characterId !== characterId
     )
     saveDb(db)
+  }
+
+  async getStaleAvailabilities(token: string): Promise<Availability[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myCharacterIds = new Set(
+      db.characters.filter((c) => c.userId === userId).map((c) => c.id)
+    )
+    const today = todayISODate()
+    return db.availabilities.filter(
+      (a) => myCharacterIds.has(a.characterId) && a.availableDate !== today
+    )
+  }
+
+  async reactivateAvailabilities(token: string): Promise<Availability[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myCharacterIds = new Set(
+      db.characters.filter((c) => c.userId === userId).map((c) => c.id)
+    )
+    const today = todayISODate()
+    db.availabilities = db.availabilities.map((a) =>
+      myCharacterIds.has(a.characterId) ? { ...a, availableDate: today } : a
+    )
+    saveDb(db)
+    return db.availabilities.filter(
+      (a) => myCharacterIds.has(a.characterId) && a.availableDate === today
+    )
   }
 
   async searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]> {

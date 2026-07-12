@@ -1,5 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 
+import { ReactivateBanner } from "@/components/home/reactivate-banner"
 import { StatCard } from "@/components/home/stat-card"
 import { TodaysAvailabilityList } from "@/components/home/todays-availability-list"
 import { Button } from "@/components/ui/button"
@@ -20,6 +21,8 @@ function HomeScreen() {
       <p className="mb-4.5 text-sm text-muted-foreground">
         Salut {user?.username}, voici ta journée.
       </p>
+
+      <ReactivateBanner />
 
       <div className="mb-5.5 flex gap-2.5">
         <StatCard label="Personnages" value={characters.length} accent="primary" />

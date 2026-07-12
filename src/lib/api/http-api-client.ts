@@ -144,6 +144,17 @@ export class HttpApiClient implements ApiClient {
     })
   }
 
+  getStaleAvailabilities(token: string): Promise<Availability[]> {
+    return request<Availability[]>("/availability/stale", { token })
+  }
+
+  reactivateAvailabilities(token: string): Promise<Availability[]> {
+    return request<Availability[]>("/availability/reactivate", {
+      method: "POST",
+      token,
+    })
+  }
+
   // Not in the cahier des charges: being available for a job (e.g.
   // crafting for hire) is separate from character availability, so it
   // gets its own mirror of the /availability routes keyed by jobId.
@@ -165,6 +176,17 @@ export class HttpApiClient implements ApiClient {
   async removeJobAvailability(token: string, jobId: string): Promise<void> {
     await request(`/job-availability/${jobId}`, {
       method: "DELETE",
+      token,
+    })
+  }
+
+  getStaleJobAvailabilities(token: string): Promise<JobAvailability[]> {
+    return request<JobAvailability[]>("/job-availability/stale", { token })
+  }
+
+  reactivateJobAvailabilities(token: string): Promise<JobAvailability[]> {
+    return request<JobAvailability[]>("/job-availability/reactivate", {
+      method: "POST",
       token,
     })
   }
