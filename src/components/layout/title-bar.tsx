@@ -1,7 +1,7 @@
 import * as React from "react"
 import { isTauri } from "@tauri-apps/api/core"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { useMatches } from "@tanstack/react-router"
+import { useMatches, useNavigate } from "@tanstack/react-router"
 import { LogOut, Menu, Minus, Monitor, Moon, Sun, X } from "lucide-react"
 
 import { useTheme, type Theme } from "@/components/theme-provider"
@@ -42,6 +42,7 @@ export function TitleBar() {
   const { user, logout } = useAuth()
   const { theme, setTheme } = useTheme()
   const matches = useMatches()
+  const navigate = useNavigate()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const [confirmOpen, setConfirmOpen] = React.useState(false)
 
@@ -145,6 +146,10 @@ export function TitleBar() {
               onClick={() => {
                 logout()
                 setConfirmOpen(false)
+                // beforeLoad guards only run on navigation, not reactively
+                // when the session clears — without this, the current
+                // authenticated route stays mounted until a hard refresh.
+                void navigate({ to: "/login" })
               }}
             >
               Se déconnecter
