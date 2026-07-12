@@ -39,6 +39,20 @@ export function CopyCommandButton({
     if (next) setMessage("Bonjour, j'ai besoin d'aide.")
   }
 
+  // Callback ref instead of a plain ref + effect: fires the instant the
+  // textarea is actually attached to the DOM (the dialog unmounts/remounts
+  // it on every open, portal timing included), so there's no risk of the
+  // effect running before the node exists.
+  const focusTextareaAtEnd = React.useCallback(
+    (node: HTMLTextAreaElement | null) => {
+      if (!node) return
+      node.focus()
+      const end = node.value.length
+      node.setSelectionRange(end, end)
+    },
+    []
+  )
+
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(
@@ -66,7 +80,7 @@ export function CopyCommandButton({
         <MessageCircleHeart className="size-3.5" />
         Copier le message
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent initialFocus={false}>
         <DialogHeader>
           <DialogTitle>Message à {characterName}</DialogTitle>
           <DialogDescription>
@@ -79,6 +93,7 @@ export function CopyCommandButton({
             /w {characterName}
           </div>
           <Textarea
+            ref={focusTextareaAtEnd}
             value={message}
             onChange={(event) => setMessage(event.target.value)}
             rows={4}
