@@ -2,7 +2,17 @@ import * as React from "react"
 import { isTauri } from "@tauri-apps/api/core"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 import { Link, useMatches, useNavigate } from "@tanstack/react-router"
-import { LogOut, Menu, Minus, Monitor, Moon, Sun, Users, X } from "lucide-react"
+import {
+  LogOut,
+  Menu,
+  Minus,
+  Monitor,
+  Moon,
+  Settings,
+  Sun,
+  Users,
+  X,
+} from "lucide-react"
 
 import { useTheme, type Theme } from "@/components/theme-provider"
 import {
@@ -26,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { useAuth } from "@/context/auth-context"
+import { getMinimizeBehavior } from "@/lib/settings-store"
 
 /**
  * Single top bar doing double duty as the custom Tauri title bar
@@ -47,8 +58,8 @@ export function TitleBar() {
   const [confirmOpen, setConfirmOpen] = React.useState(false)
 
   const title =
-    [...matches].reverse().find((match) => match.staticData?.title)
-      ?.staticData?.title ?? ""
+    [...matches].reverse().find((match) => match.staticData?.title)?.staticData
+      ?.title ?? ""
 
   return (
     <div
@@ -83,7 +94,14 @@ export function TitleBar() {
                 onClick={() => setMenuOpen(false)}
               >
                 <Users className="opacity-70" />
-                Mes personnages
+                Mes persos
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={<Link to="/settings" />}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Settings className="opacity-70" />
+                Paramètres
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
@@ -120,7 +138,15 @@ export function TitleBar() {
           <>
             <button
               type="button"
-              onClick={() => void getCurrentWindow().minimize()}
+              onClick={() => {
+                const window = getCurrentWindow()
+                // "tray" hides the window entirely (only the tray icon's
+                // "Afficher" brings it back, see src-tauri/src/tray.rs) —
+                // "taskbar" is the normal OS minimize (default).
+                void (getMinimizeBehavior() === "tray"
+                  ? window.hide()
+                  : window.minimize())
+              }}
               aria-label="Réduire"
               className="flex size-7 items-center justify-center rounded-lg text-foreground/70 hover:bg-muted hover:text-foreground"
             >
