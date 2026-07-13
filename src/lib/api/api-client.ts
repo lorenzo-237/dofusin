@@ -5,6 +5,9 @@ import type {
   Character,
   CharacterInput,
   HelperSearchResult,
+  HelpRequest,
+  HelpRequestInput,
+  HelpRequestResponder,
   Job,
   JobAvailability,
   JobAvailabilityInput,
@@ -87,4 +90,32 @@ export interface ApiClient {
   // searchHelpers there's no "browse everything" mode, you look up one
   // specific job on one specific server.
   searchJobHelpers(filters: JobSearchFilters): Promise<JobSearchResult[]>
+
+  // "Recherche intelligente" — see HelpRequest in lib/types.ts. Live
+  // delivery happens over WebSocket (src/lib/ws-client.ts); these REST
+  // methods are both the mutation path (create/accept/decline/validate/
+  // dispute) and the catch-up path for whatever a WS push might have
+  // missed while offline.
+  createHelpRequest(token: string, input: HelpRequestInput): Promise<HelpRequest>
+  getIncomingHelpRequests(token: string): Promise<HelpRequest[]>
+  getMyHelpRequests(token: string): Promise<HelpRequest[]>
+  // Symmetric to getMyHelpRequests but from the helper's side — catch-up
+  // for help-request:resolved if I was offline when it got validated/disputed.
+  getAcceptedHelpRequests(token: string): Promise<HelpRequest[]>
+  acceptHelpRequest(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<HelpRequest>
+  declineHelpRequestAndGoUnavailable(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<void>
+  validateHelpRequest(token: string, id: string): Promise<HelpRequest>
+  disputeHelpRequest(
+    token: string,
+    id: string,
+    reason: string
+  ): Promise<HelpRequest>
 }

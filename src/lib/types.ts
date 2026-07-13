@@ -104,3 +104,37 @@ export interface JobSearchFilters {
   job: string
 }
 
+// "Recherche intelligente" broadcast: a requester asks for a character
+// (optionally filtered by class) or a specific job on a server; every
+// currently-available matching character/job gets notified live over
+// WebSocket (see src/lib/ws-client.ts) — this shape is what both the
+// REST catch-up routes and the WS `help-request:*` events carry.
+export type HelpRequestStatus = "OPEN" | "ACCEPTED" | "VALIDATED" | "DISPUTED"
+
+export interface HelpRequest {
+  id: string
+  requesterId: string
+  server: string
+  targetType: "character" | "job"
+  targetClass: string | null
+  targetJob: string | null
+  status: HelpRequestStatus
+  helperId: string | null
+  helperCharacterId: string | null
+  helperJobId: string | null
+  acceptedAt: string | null
+  disputeReason: string | null
+  resolvedAt: string | null
+  createdAt: string
+}
+
+export type HelpRequestInput =
+  | { targetType: "character"; server: string; targetClass?: string | null }
+  | { targetType: "job"; server: string; targetJob: string }
+
+// Which of the accepting/declining side's characters or jobs is doing the
+// helping — must match the request's own targetType.
+export type HelpRequestResponder =
+  | { targetType: "character"; characterId: string }
+  | { targetType: "job"; jobId: string }
+

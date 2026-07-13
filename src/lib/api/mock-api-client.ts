@@ -9,6 +9,9 @@ import type {
   Character,
   CharacterInput,
   HelperSearchResult,
+  HelpRequest,
+  HelpRequestInput,
+  HelpRequestResponder,
   Job,
   JobAvailability,
   JobAvailabilityInput,
@@ -30,12 +33,17 @@ interface MockDb {
   jobs: Job[]
   availabilities: Availability[]
   jobAvailabilities: JobAvailability[]
+  helpRequests: HelpRequest[]
   tokens: Record<string, string>
 }
 
 // Auth is Discord OAuth2 only — nothing to actually validate outside Tauri,
 // so there's a single deterministic mock account (no real Discord code ever
-// reaches this client, see AuthProvider.loginWithDiscord).
+// reaches this client, see AuthProvider.loginWithDiscord). Since there's
+// only ever one mock account, HelpRequest flows that need a *second*
+// account (getIncomingHelpRequests, accepting) can't be meaningfully
+// exercised here — same limitation as not being able to test the real
+// Discord OAuth round-trip in mock mode.
 function emptyDb(): MockDb {
   return {
     users: [{ id: "u1", username: "test" }],
@@ -43,6 +51,7 @@ function emptyDb(): MockDb {
     jobs: [],
     availabilities: [],
     jobAvailabilities: [],
+    helpRequests: [],
     tokens: {},
   }
 }
@@ -431,5 +440,193 @@ export class MockApiClient implements ApiClient {
     return pool.filter(
       (h) => h.server === filters.server && h.job === filters.job
     )
+  }
+
+  async createHelpRequest(
+    token: string,
+    input: HelpRequestInput
+  ): Promise<HelpRequest> {
+    await delay()
+    const db = loadDb()
+    const requesterId = this.resolveUserId(db, token)
+
+    const helpRequest: HelpRequest = {
+      id: generateId(),
+      requesterId,
+      server: input.server,
+      targetType: input.targetType,
+      targetClass:
+        input.targetType === "character" ? (input.targetClass ?? null) : null,
+      targetJob: input.targetType === "job" ? input.targetJob : null,
+      status: "OPEN",
+      helperId: null,
+      helperCharacterId: null,
+      helperJobId: null,
+      acceptedAt: null,
+      disputeReason: null,
+      resolvedAt: null,
+      createdAt: new Date().toISOString(),
+    }
+    db.helpRequests.push(helpRequest)
+    saveDb(db)
+    return helpRequest
+  }
+
+  // Always empty in practice: with a single mock account, every request in
+  // the DB was created by "me", so none can match "everyone but me". See
+  // the note on emptyDb().
+  async getIncomingHelpRequests(token: string): Promise<HelpRequest[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    return db.helpRequests.filter(
+      (r) => r.status === "OPEN" && r.requesterId !== userId
+    )
+  }
+
+  async getMyHelpRequests(token: string): Promise<HelpRequest[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    return db.helpRequests
+      .filter((r) => r.requesterId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  // Always empty in practice, same reason as acceptHelpRequest can never
+  // actually succeed in mock mode: a single account can't accept its own
+  // requests.
+  async getAcceptedHelpRequests(token: string): Promise<HelpRequest[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    return db.helpRequests
+      .filter((r) => r.helperId === userId)
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+  }
+
+  async acceptHelpRequest(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<HelpRequest> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+
+    const helpRequest = db.helpRequests.find((r) => r.id === id)
+    if (!helpRequest) throw new ApiError("Demande introuvable.", 404)
+    if (helpRequest.requesterId === userId) {
+      throw new ApiError("Tu ne peux pas répondre à ta propre demande.", 400)
+    }
+    if (helpRequest.status !== "OPEN") {
+      throw new ApiError(
+        "Cette demande a déjà été prise par quelqu'un d'autre.",
+        409
+      )
+    }
+
+    if (responder.targetType === "character") {
+      const character = this.assertOwnedCharacter(
+        db,
+        userId,
+        responder.characterId
+      )
+      helpRequest.helperCharacterId = character.id
+    } else {
+      const job = this.assertOwnedJob(db, userId, responder.jobId)
+      helpRequest.helperJobId = job.id
+    }
+
+    helpRequest.status = "ACCEPTED"
+    helpRequest.helperId = userId
+    helpRequest.acceptedAt = new Date().toISOString()
+
+    saveDb(db)
+    return helpRequest
+  }
+
+  async declineHelpRequestAndGoUnavailable(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<void> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+
+    const helpRequest = db.helpRequests.find((r) => r.id === id)
+    if (!helpRequest) throw new ApiError("Demande introuvable.", 404)
+
+    if (responder.targetType === "character") {
+      const character = this.assertOwnedCharacter(
+        db,
+        userId,
+        responder.characterId
+      )
+      db.availabilities = db.availabilities.filter(
+        (a) => a.characterId !== character.id
+      )
+    } else {
+      const job = this.assertOwnedJob(db, userId, responder.jobId)
+      db.jobAvailabilities = db.jobAvailabilities.filter(
+        (a) => a.jobId !== job.id
+      )
+    }
+    saveDb(db)
+  }
+
+  async validateHelpRequest(token: string, id: string): Promise<HelpRequest> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+
+    const helpRequest = db.helpRequests.find((r) => r.id === id)
+    if (!helpRequest) throw new ApiError("Demande introuvable.", 404)
+    if (helpRequest.requesterId !== userId) {
+      throw new ApiError("Seul l'auteur de la demande peut la valider.", 403)
+    }
+    if (helpRequest.status !== "ACCEPTED") {
+      throw new ApiError(
+        "Cette demande n'est pas en attente de validation.",
+        400
+      )
+    }
+
+    helpRequest.status = "VALIDATED"
+    helpRequest.resolvedAt = new Date().toISOString()
+    saveDb(db)
+    return helpRequest
+  }
+
+  async disputeHelpRequest(
+    token: string,
+    id: string,
+    reason: string
+  ): Promise<HelpRequest> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+
+    const helpRequest = db.helpRequests.find((r) => r.id === id)
+    if (!helpRequest) throw new ApiError("Demande introuvable.", 404)
+    if (helpRequest.requesterId !== userId) {
+      throw new ApiError(
+        "Seul l'auteur de la demande peut ouvrir un litige.",
+        403
+      )
+    }
+    if (helpRequest.status !== "ACCEPTED") {
+      throw new ApiError(
+        "Cette demande n'est pas en attente de validation.",
+        400
+      )
+    }
+
+    helpRequest.status = "DISPUTED"
+    helpRequest.disputeReason = reason
+    helpRequest.resolvedAt = new Date().toISOString()
+    saveDb(db)
+    return helpRequest
   }
 }

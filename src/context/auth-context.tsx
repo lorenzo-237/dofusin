@@ -3,6 +3,7 @@ import * as React from "react"
 import { invoke, isTauri } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { openUrl } from "@tauri-apps/plugin-opener"
+import { toast } from "sonner"
 
 import { getApiClient } from "@/lib/api"
 import { getSession, setSession, subscribeSession } from "@/lib/auth-store"
@@ -11,12 +12,25 @@ import type {
   AvailabilityInput,
   Character,
   CharacterInput,
+  HelpRequest,
+  HelpRequestInput,
+  HelpRequestResponder,
   Job,
   JobAvailability,
   JobAvailabilityInput,
   JobInput,
   User,
 } from "@/lib/types"
+import { showNotificationPopup } from "@/lib/notification-window"
+import { connectWs, disconnectWs, onWsEvent } from "@/lib/ws-client"
+
+function describeHelpRequestTarget(request: HelpRequest): string {
+  const label =
+    request.targetType === "job"
+      ? request.targetJob
+      : (request.targetClass ?? "Toutes classes")
+  return `${label} · ${request.server}`
+}
 
 // Discord OAuth2 rejects custom URI schemes as redirect_uri — this loopback
 // server (started Rust-side, see src-tauri/src/oauth.rs) is the RFC 8252
@@ -65,6 +79,28 @@ interface AuthContextValue {
 
   setJobAvailability: (input: JobAvailabilityInput) => Promise<void>
   removeJobAvailability: (jobId: string) => Promise<void>
+
+  // "Recherche intelligente" — see HelpRequest in lib/types.ts.
+  // incomingHelpRequests: OPEN requests I could accept.
+  // myHelpRequests: requests I created (any status) — validate/dispute live here.
+  // acceptedHelpRequests: requests I accepted as a helper (any status).
+  // Kept live by the WS listener below; REST-fetched once on login as a
+  // catch-up for whatever happened while the app was closed.
+  incomingHelpRequests: HelpRequest[]
+  myHelpRequests: HelpRequest[]
+  acceptedHelpRequests: HelpRequest[]
+  createHelpRequest: (input: HelpRequestInput) => Promise<void>
+  dismissIncomingHelpRequest: (id: string) => void
+  acceptHelpRequest: (
+    id: string,
+    responder: HelpRequestResponder
+  ) => Promise<void>
+  declineHelpRequestAndGoUnavailable: (
+    id: string,
+    responder: HelpRequestResponder
+  ) => Promise<void>
+  validateHelpRequest: (id: string) => Promise<void>
+  disputeHelpRequest: (id: string, reason: string) => Promise<void>
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(
@@ -86,6 +122,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   >([])
   const [staleJobAvailabilities, setStaleJobAvailabilities] = React.useState<
     JobAvailability[]
+  >([])
+  const [incomingHelpRequests, setIncomingHelpRequests] = React.useState<
+    HelpRequest[]
+  >([])
+  const [myHelpRequests, setMyHelpRequests] = React.useState<HelpRequest[]>([])
+  const [acceptedHelpRequests, setAcceptedHelpRequests] = React.useState<
+    HelpRequest[]
   >([])
 
   const token = session?.token ?? null
@@ -109,6 +152,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       client.getMyJobAvailabilities(token),
       client.getStaleAvailabilities(token),
       client.getStaleJobAvailabilities(token),
+      client.getIncomingHelpRequests(token),
+      client.getMyHelpRequests(token),
+      client.getAcceptedHelpRequests(token),
     ]).then(
       ([
         nextCharacters,
@@ -117,6 +163,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nextJobAvailabilities,
         nextStaleAvailabilities,
         nextStaleJobAvailabilities,
+        nextIncomingHelpRequests,
+        nextMyHelpRequests,
+        nextAcceptedHelpRequests,
       ]) => {
         if (cancelled) return
         setCharacters(nextCharacters)
@@ -125,6 +174,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setJobAvailabilities(nextJobAvailabilities)
         setStaleAvailabilities(nextStaleAvailabilities)
         setStaleJobAvailabilities(nextStaleJobAvailabilities)
+        setIncomingHelpRequests(nextIncomingHelpRequests)
+        setMyHelpRequests(nextMyHelpRequests)
+        setAcceptedHelpRequests(nextAcceptedHelpRequests)
         setLoadedForToken(token)
       }
     )
@@ -132,6 +184,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       cancelled = true
     }
   }, [token])
+
+  // Live delivery for "recherche intelligente" — only meaningful against a
+  // real backend, there's nothing to connect to in mock strategy (see
+  // ws-client.ts). REST above already fetched the current state; this only
+  // keeps it live from here on.
+  React.useEffect(() => {
+    if (!token) return
+    if (import.meta.env.VITE_API_STRATEGY !== "http") return
+    connectWs(token)
+    return () => disconnectWs()
+  }, [token])
+
+  React.useEffect(() => {
+    return onWsEvent((event) => {
+      switch (event.type) {
+        case "help-request:incoming": {
+          setIncomingHelpRequests((prev) =>
+            prev.some((r) => r.id === event.payload.id)
+              ? prev
+              : [...prev, event.payload]
+          )
+          const target = describeHelpRequestTarget(event.payload)
+          toast.info(`Nouvelle demande d'aide : ${target}`)
+          void showNotificationPopup("Demande d'aide", target)
+          break
+        }
+        case "help-request:accepted":
+          setMyHelpRequests((prev) =>
+            prev.map((r) => (r.id === event.payload.id ? event.payload : r))
+          )
+          toast.success("Quelqu'un a accepté ta demande !")
+          void showNotificationPopup(
+            "Demande acceptée",
+            "Quelqu'un a accepté ta demande d'aide."
+          )
+          break
+        case "help-request:closed":
+          setIncomingHelpRequests((prev) =>
+            prev.filter((r) => r.id !== event.payload.id)
+          )
+          break
+        case "help-request:resolved":
+          setAcceptedHelpRequests((prev) =>
+            prev.map((r) => (r.id === event.payload.id ? event.payload : r))
+          )
+          if (event.payload.status === "VALIDATED") {
+            toast.success("Aide validée, +1 xp !")
+            void showNotificationPopup("Aide validée", "+1 xp pour t'avoir aidé.")
+          } else if (event.payload.status === "DISPUTED") {
+            toast.error("Un litige a été ouvert sur une de tes aides.")
+            void showNotificationPopup(
+              "Litige ouvert",
+              "Un litige a été ouvert sur une de tes aides."
+            )
+          }
+          break
+      }
+    })
+  }, [])
 
   // Resolved/rejected by the oauth://callback listener below once Discord
   // redirects back to the local loopback server — kept in a ref so the
@@ -209,6 +320,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setJobAvailabilities([])
     setStaleAvailabilities([])
     setStaleJobAvailabilities([])
+    setIncomingHelpRequests([])
+    setMyHelpRequests([])
+    setAcceptedHelpRequests([])
   }, [])
 
   const requireToken = React.useCallback(() => {
@@ -344,6 +458,98 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [requireToken]
   )
 
+  const createHelpRequest = React.useCallback(
+    async (input: HelpRequestInput) => {
+      const activeToken = requireToken()
+      const helpRequest = await getApiClient().createHelpRequest(
+        activeToken,
+        input
+      )
+      setMyHelpRequests((prev) => [helpRequest, ...prev])
+    },
+    [requireToken]
+  )
+
+  // Declining without going unavailable never touches the server — the
+  // request stays OPEN for other matching helpers either way, so there's
+  // nothing to persist, just a local dismissal.
+  const dismissIncomingHelpRequest = React.useCallback((id: string) => {
+    setIncomingHelpRequests((prev) => prev.filter((r) => r.id !== id))
+  }, [])
+
+  const acceptHelpRequest = React.useCallback(
+    async (id: string, responder: HelpRequestResponder) => {
+      const activeToken = requireToken()
+      const helpRequest = await getApiClient().acceptHelpRequest(
+        activeToken,
+        id,
+        responder
+      )
+      setIncomingHelpRequests((prev) => prev.filter((r) => r.id !== id))
+      setAcceptedHelpRequests((prev) => [helpRequest, ...prev])
+    },
+    [requireToken]
+  )
+
+  const declineHelpRequestAndGoUnavailable = React.useCallback(
+    async (id: string, responder: HelpRequestResponder) => {
+      const activeToken = requireToken()
+      await getApiClient().declineHelpRequestAndGoUnavailable(
+        activeToken,
+        id,
+        responder
+      )
+      setIncomingHelpRequests((prev) => prev.filter((r) => r.id !== id))
+      // Mirrors removeAvailability/removeJobAvailability — the whole row is
+      // gone, not just today's entry.
+      if (responder.targetType === "character") {
+        setAvailabilities((prev) =>
+          prev.filter((a) => a.characterId !== responder.characterId)
+        )
+        setStaleAvailabilities((prev) =>
+          prev.filter((a) => a.characterId !== responder.characterId)
+        )
+      } else {
+        setJobAvailabilities((prev) =>
+          prev.filter((a) => a.jobId !== responder.jobId)
+        )
+        setStaleJobAvailabilities((prev) =>
+          prev.filter((a) => a.jobId !== responder.jobId)
+        )
+      }
+    },
+    [requireToken]
+  )
+
+  const validateHelpRequest = React.useCallback(
+    async (id: string) => {
+      const activeToken = requireToken()
+      const helpRequest = await getApiClient().validateHelpRequest(
+        activeToken,
+        id
+      )
+      setMyHelpRequests((prev) =>
+        prev.map((r) => (r.id === id ? helpRequest : r))
+      )
+    },
+    [requireToken]
+  )
+
+  const disputeHelpRequest = React.useCallback(
+    async (id: string, reason: string) => {
+      const activeToken = requireToken()
+      const helpRequest = await getApiClient().disputeHelpRequest(
+        activeToken,
+        id,
+        reason
+      )
+      setMyHelpRequests((prev) =>
+        prev.map((r) => (r.id === id ? helpRequest : r))
+      )
+    },
+    [requireToken]
+  )
+
   const value = React.useMemo<AuthContextValue>(
     () => ({
       user: session?.user ?? null,
@@ -369,6 +575,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeAvailability,
       setJobAvailability,
       removeJobAvailability,
+      incomingHelpRequests,
+      myHelpRequests,
+      acceptedHelpRequests,
+      createHelpRequest,
+      dismissIncomingHelpRequest,
+      acceptHelpRequest,
+      declineHelpRequestAndGoUnavailable,
+      validateHelpRequest,
+      disputeHelpRequest,
     }),
     [
       session,
@@ -393,6 +608,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       removeAvailability,
       setJobAvailability,
       removeJobAvailability,
+      incomingHelpRequests,
+      myHelpRequests,
+      acceptedHelpRequests,
+      createHelpRequest,
+      dismissIncomingHelpRequest,
+      acceptHelpRequest,
+      declineHelpRequestAndGoUnavailable,
+      validateHelpRequest,
+      disputeHelpRequest,
     ]
   )
 

@@ -7,6 +7,9 @@ import type {
   Character,
   CharacterInput,
   HelperSearchResult,
+  HelpRequest,
+  HelpRequestInput,
+  HelpRequestResponder,
   Job,
   JobAvailability,
   JobAvailabilityInput,
@@ -214,5 +217,71 @@ export class HttpApiClient implements ApiClient {
       job: filters.job,
     })
     return request<JobSearchResult[]>(`/job-helpers?${params.toString()}`)
+  }
+
+  createHelpRequest(
+    token: string,
+    input: HelpRequestInput
+  ): Promise<HelpRequest> {
+    return request<HelpRequest>("/help-requests", {
+      method: "POST",
+      token,
+      body: input,
+    })
+  }
+
+  getIncomingHelpRequests(token: string): Promise<HelpRequest[]> {
+    return request<HelpRequest[]>("/help-requests/incoming", { token })
+  }
+
+  getMyHelpRequests(token: string): Promise<HelpRequest[]> {
+    return request<HelpRequest[]>("/help-requests/mine", { token })
+  }
+
+  getAcceptedHelpRequests(token: string): Promise<HelpRequest[]> {
+    return request<HelpRequest[]>("/help-requests/accepted", { token })
+  }
+
+  acceptHelpRequest(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<HelpRequest> {
+    return request<HelpRequest>(`/help-requests/${id}/accept`, {
+      method: "POST",
+      token,
+      body: responder,
+    })
+  }
+
+  async declineHelpRequestAndGoUnavailable(
+    token: string,
+    id: string,
+    responder: HelpRequestResponder
+  ): Promise<void> {
+    await request(`/help-requests/${id}/decline-and-unavailable`, {
+      method: "POST",
+      token,
+      body: responder,
+    })
+  }
+
+  validateHelpRequest(token: string, id: string): Promise<HelpRequest> {
+    return request<HelpRequest>(`/help-requests/${id}/validate`, {
+      method: "POST",
+      token,
+    })
+  }
+
+  disputeHelpRequest(
+    token: string,
+    id: string,
+    reason: string
+  ): Promise<HelpRequest> {
+    return request<HelpRequest>(`/help-requests/${id}/dispute`, {
+      method: "POST",
+      token,
+      body: { reason },
+    })
   }
 }
