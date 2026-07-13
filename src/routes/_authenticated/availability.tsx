@@ -2,6 +2,7 @@ import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
 
 import { CharacterAvailabilityList } from "@/components/availability/character-availability-list"
+import { EmptyStateReminder } from "@/components/availability/empty-state-reminder"
 import { JobAvailabilityBulkBar } from "@/components/availability/job-availability-bulk-bar"
 import { JobAvailabilityList } from "@/components/availability/job-availability-list"
 import { ServerSelect } from "@/components/shared/server-select"
@@ -153,29 +154,39 @@ function AvailabilityScreen() {
         </TabsList>
 
         <TabsContent value="characters">
-          <CharacterAvailabilityList
-            characters={serverCharacters}
-            availabilities={availabilities}
-            onToggle={handleToggle}
-            onFieldChange={handleFieldChange}
-          />
+          {serverCharacters.length === 0 ? (
+            <EmptyStateReminder message="Aucun personnage sur ce serveur pour l'instant." />
+          ) : (
+            <CharacterAvailabilityList
+              characters={serverCharacters}
+              availabilities={availabilities}
+              onToggle={handleToggle}
+              onFieldChange={handleFieldChange}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="jobs">
-          <JobAvailabilityBulkBar
-            characters={serverCharacters}
-            allOn={allServerJobsOn}
-            onToggleAll={handleToggleAllJobs}
-            onAssignCharacterToAll={handleAssignCharacterToAllJobs}
-          />
-          <JobAvailabilityList
-            jobs={serverJobs}
-            characters={serverCharacters}
-            availabilities={jobAvailabilities}
-            onToggle={handleJobToggle}
-            onFieldChange={handleJobFieldChange}
-            onCharacterChange={handleJobCharacterChange}
-          />
+          {serverJobs.length === 0 ? (
+            <EmptyStateReminder message="Aucun métier sur ce serveur pour l'instant." />
+          ) : (
+            <>
+              <JobAvailabilityBulkBar
+                characters={serverCharacters}
+                allOn={allServerJobsOn}
+                onToggleAll={handleToggleAllJobs}
+                onAssignCharacterToAll={handleAssignCharacterToAllJobs}
+              />
+              <JobAvailabilityList
+                jobs={serverJobs}
+                characters={serverCharacters}
+                availabilities={jobAvailabilities}
+                onToggle={handleJobToggle}
+                onFieldChange={handleJobFieldChange}
+                onCharacterChange={handleJobCharacterChange}
+              />
+            </>
+          )}
         </TabsContent>
       </Tabs>
     </div>

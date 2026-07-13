@@ -1,8 +1,8 @@
 import * as React from "react"
 import { isTauri } from "@tauri-apps/api/core"
 import { getCurrentWindow } from "@tauri-apps/api/window"
-import { useMatches, useNavigate } from "@tanstack/react-router"
-import { LogOut, Menu, Minus, Monitor, Moon, Sun, X } from "lucide-react"
+import { Link, useMatches, useNavigate } from "@tanstack/react-router"
+import { LogOut, Menu, Minus, Monitor, Moon, Sun, Users, X } from "lucide-react"
 
 import { useTheme, type Theme } from "@/components/theme-provider"
 import {
@@ -78,6 +78,14 @@ export function TitleBar() {
               <Menu className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                render={<Link to="/characters" />}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Users className="opacity-70" />
+                Mes personnages
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuRadioGroup
                 value={theme}
                 onValueChange={(value) => setTheme(value as Theme)}
