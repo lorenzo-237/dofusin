@@ -31,10 +31,29 @@ let reconnectTimer: number | undefined
 let currentToken: string | null = null
 const listeners = new Set<Listener>()
 
-function openSocket(token: string) {
-  socket = new WebSocket(deriveWsUrl(token))
+// Strips the handlers before closing so a socket that's mid-close (the
+// WebSocket close handshake is async, it doesn't finish the instant
+// .close() is called) can never deliver another message — without this, a
+// StrictMode dev double-mount (connect → disconnect → connect again, back
+// to back) could briefly leave two sockets both "open" from the server's
+// point of view, and a single server push would reach both, firing every
+// listener twice for what should've been one event.
+function closeSocket(target: WebSocket | null) {
+  if (!target) return
+  target.onmessage = null
+  target.onclose = null
+  target.onerror = null
+  target.close()
+}
 
-  socket.onmessage = (event: MessageEvent<string>) => {
+function openSocket(token: string) {
+  const nextSocket = new WebSocket(deriveWsUrl(token))
+  socket = nextSocket
+
+  nextSocket.onmessage = (event: MessageEvent<string>) => {
+    // Extra guard alongside closeSocket() above: ignore anything from a
+    // socket that's no longer the current one.
+    if (socket !== nextSocket) return
     try {
       const parsed = JSON.parse(event.data) as WsEvent
       listeners.forEach((listener) => listener(parsed))
@@ -43,8 +62,8 @@ function openSocket(token: string) {
     }
   }
 
-  socket.onclose = () => {
-    socket = null
+  nextSocket.onclose = () => {
+    if (socket === nextSocket) socket = null
     if (!currentToken) return
     window.clearTimeout(reconnectTimer)
     reconnectTimer = window.setTimeout(() => {
@@ -52,8 +71,8 @@ function openSocket(token: string) {
     }, RECONNECT_DELAY_MS)
   }
 
-  socket.onerror = () => {
-    socket?.close()
+  nextSocket.onerror = () => {
+    nextSocket.close()
   }
 }
 
@@ -66,14 +85,14 @@ function openSocket(token: string) {
  */
 export function connectWs(token: string): void {
   currentToken = token
-  socket?.close()
+  closeSocket(socket)
   openSocket(token)
 }
 
 export function disconnectWs(): void {
   currentToken = null
   window.clearTimeout(reconnectTimer)
-  socket?.close()
+  closeSocket(socket)
   socket = null
 }
 

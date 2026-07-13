@@ -19,7 +19,11 @@ const MARGIN = 16
  */
 export async function showNotificationPopup(
   title: string,
-  body: string
+  body: string,
+  /** Forwarded back via the "notification-click" Tauri event (see
+   * notification.html) so the main window's listener (auth-context.tsx)
+   * knows which /help-requests tab to navigate to on click. */
+  tab: string
 ): Promise<void> {
   if (!isTauri()) return
   try {
@@ -35,7 +39,7 @@ export async function showNotificationPopup(
     const workWidth = monitor ? monitor.size.width / scale : 1280
     const workHeight = monitor ? monitor.size.height / scale : 800
 
-    const params = new URLSearchParams({ title, body })
+    const params = new URLSearchParams({ title, body, tab })
     new WebviewWindow(POPUP_LABEL, {
       url: `/notification.html?${params.toString()}`,
       width: POPUP_WIDTH,

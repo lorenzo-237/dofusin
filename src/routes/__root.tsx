@@ -15,7 +15,7 @@ function RootComponent() {
       <MobileShell>
         <Outlet />
       </MobileShell>
-      <Toaster position="top-center" richColors />
+      <Toaster position="top-center" richColors closeButton />
       {import.meta.env.DEV ? (
         <TanStackRouterDevtools position="bottom-right" />
       ) : null}

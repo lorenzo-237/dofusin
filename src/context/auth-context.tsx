@@ -3,6 +3,7 @@ import * as React from "react"
 import { invoke, isTauri } from "@tauri-apps/api/core"
 import { listen } from "@tauri-apps/api/event"
 import { openUrl } from "@tauri-apps/plugin-opener"
+import { useNavigate } from "@tanstack/react-router"
 import { toast } from "sonner"
 
 import { getApiClient } from "@/lib/api"
@@ -30,6 +31,15 @@ function describeHelpRequestTarget(request: HelpRequest): string {
       ? request.targetJob
       : (request.targetClass ?? "Toutes classes")
   return `${label} · ${request.server}`
+}
+
+// Kept as a plain string union here (not imported from the route file) so
+// this context doesn't depend on a specific route module — routes already
+// depend on this context (useAuth), not the other way around.
+type HelpRequestsTab = "create" | "incoming" | "mine"
+
+function isHelpRequestsTab(value: string): value is HelpRequestsTab {
+  return value === "create" || value === "incoming" || value === "mine"
 }
 
 // Discord OAuth2 rejects custom URI schemes as redirect_uri — this loopback
@@ -108,6 +118,7 @@ const AuthContext = React.createContext<AuthContextValue | undefined>(
 )
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate()
   const session = React.useSyncExternalStore(subscribeSession, getSession)
   const [characters, setCharacters] = React.useState<Character[]>([])
   const [jobs, setJobs] = React.useState<Job[]>([])
@@ -196,6 +207,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => disconnectWs()
   }, [token])
 
+  const goToHelpRequests = React.useCallback(
+    (tab: HelpRequestsTab) => {
+      void navigate({ to: "/help-requests", search: { tab } })
+    },
+    [navigate]
+  )
+
+  // Read via ref inside the WS listener effects below instead of listing
+  // goToHelpRequests as a dependency — those effects must register their
+  // listener exactly once (like the oauth://callback one further down),
+  // not re-subscribe every time this identity changes. Re-subscribing on
+  // every AuthProvider render was the actual bug behind toasts firing more
+  // than once per event (see ws-client.ts for the matching fix on the
+  // socket side).
+  const goToHelpRequestsRef = React.useRef(goToHelpRequests)
+  React.useEffect(() => {
+    goToHelpRequestsRef.current = goToHelpRequests
+  }, [goToHelpRequests])
+
   React.useEffect(() => {
     return onWsEvent((event) => {
       switch (event.type) {
@@ -206,18 +236,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               : [...prev, event.payload]
           )
           const target = describeHelpRequestTarget(event.payload)
-          toast.info(`Nouvelle demande d'aide : ${target}`)
-          void showNotificationPopup("Demande d'aide", target)
+          toast.info(`Nouvelle demande d'aide : ${target}`, {
+            action: {
+              label: "Voir",
+              onClick: () => goToHelpRequestsRef.current("incoming"),
+            },
+          })
+          void showNotificationPopup("Demande d'aide", target, "incoming")
           break
         }
         case "help-request:accepted":
           setMyHelpRequests((prev) =>
             prev.map((r) => (r.id === event.payload.id ? event.payload : r))
           )
-          toast.success("Quelqu'un a accepté ta demande !")
+          toast.success("Quelqu'un a accepté ta demande !", {
+            action: {
+              label: "Voir",
+              onClick: () => goToHelpRequestsRef.current("mine"),
+            },
+          })
           void showNotificationPopup(
             "Demande acceptée",
-            "Quelqu'un a accepté ta demande d'aide."
+            "Quelqu'un a accepté ta demande d'aide.",
+            "mine"
           )
           break
         case "help-request:closed":
@@ -230,18 +271,50 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             prev.map((r) => (r.id === event.payload.id ? event.payload : r))
           )
           if (event.payload.status === "VALIDATED") {
-            toast.success("Aide validée, +1 xp !")
-            void showNotificationPopup("Aide validée", "+1 xp pour t'avoir aidé.")
+            toast.success("Aide validée, +1 xp !", {
+              action: {
+                label: "Voir",
+                onClick: () => goToHelpRequestsRef.current("mine"),
+              },
+            })
+            void showNotificationPopup(
+              "Aide validée",
+              "+1 xp pour t'avoir aidé.",
+              "mine"
+            )
           } else if (event.payload.status === "DISPUTED") {
-            toast.error("Un litige a été ouvert sur une de tes aides.")
+            toast.error("Un litige a été ouvert sur une de tes aides.", {
+              action: {
+                label: "Voir",
+                onClick: () => goToHelpRequestsRef.current("mine"),
+              },
+            })
             void showNotificationPopup(
               "Litige ouvert",
-              "Un litige a été ouvert sur une de tes aides."
+              "Un litige a été ouvert sur une de tes aides.",
+              "mine"
             )
           }
           break
       }
     })
+  }, [])
+
+  // The popup window (public/notification.html) is a separate JS
+  // context/window — this is how a click over there reaches the router
+  // over here, same IPC pattern as the oauth://callback listener below.
+  React.useEffect(() => {
+    const unlistenPromise = listen<{ tab: string }>(
+      "notification-click",
+      (event) => {
+        if (isHelpRequestsTab(event.payload.tab)) {
+          goToHelpRequestsRef.current(event.payload.tab)
+        }
+      }
+    )
+    return () => {
+      void unlistenPromise.then((unlisten) => unlisten())
+    }
   }, [])
 
   // Resolved/rejected by the oauth://callback listener below once Discord

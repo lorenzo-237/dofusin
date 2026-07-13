@@ -33,10 +33,11 @@
         height: 100%;
       }
       body {
+        position: relative;
         display: flex;
         align-items: center;
         gap: 12px;
-        padding: 14px 16px;
+        padding: 14px 28px 14px 16px;
         background: var(--card);
         border: 1px solid var(--border);
         color: var(--foreground);
@@ -56,6 +57,28 @@
       }
       .text {
         min-width: 0;
+      }
+      .close-btn {
+        position: absolute;
+        top: 6px;
+        right: 6px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 18px;
+        height: 18px;
+        padding: 0;
+        border: none;
+        border-radius: 4px;
+        background: transparent;
+        color: var(--muted-foreground);
+        font-size: 14px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .close-btn:hover {
+        background: var(--border);
+        color: var(--foreground);
       }
       .title {
         font-size: 13px;
@@ -81,6 +104,9 @@
       <p class="title" id="title">DofusIn</p>
       <p class="body" id="body"></p>
     </div>
+    <button class="close-btn" id="close-btn" type="button" aria-label="Fermer">
+      &times;
+    </button>
     <script>
       // Standalone page, no bundler — relies on withGlobalTauri (see
       // tauri.conf.json) instead of the @tauri-apps/api package import used
@@ -93,9 +119,13 @@
         document.getElementById("body").textContent = params.get("body") || ""
 
         var tauriWindow = window.__TAURI__ && window.__TAURI__.window
+        var tauriEvent = window.__TAURI__ && window.__TAURI__.event
         if (!tauriWindow) return
 
+        var autoCloseTimer
+
         function closeSelf() {
+          clearTimeout(autoCloseTimer)
           tauriWindow
             .getCurrentWindow()
             .close()
@@ -103,6 +133,15 @@
         }
 
         function focusMain() {
+          // Lets auth-context.tsx's listener (main window) navigate to the
+          // right /help-requests tab for whatever event triggered this
+          // popup — the popup itself is a separate JS context/window, so
+          // this is the only way to reach the router from here.
+          if (tauriEvent) {
+            tauriEvent
+              .emit("notification-click", { tab: params.get("tab") || "" })
+              .catch(function () {})
+          }
           tauriWindow
             .getAllWindows()
             .then(function (windows) {
@@ -124,7 +163,15 @@
         }
 
         document.body.addEventListener("click", focusMain)
-        setTimeout(closeSelf, 6000)
+        document
+          .getElementById("close-btn")
+          .addEventListener("click", function (event) {
+            // Don't let this bubble to the body's own click handler
+            // (focusMain) — dismissing shouldn't also focus the main window.
+            event.stopPropagation()
+            closeSelf()
+          })
+        autoCloseTimer = setTimeout(closeSelf, 6000)
       })()
     </script>
   </body>
