@@ -17,11 +17,16 @@ export interface Character {
   class: string
   // 1-200 (Dofus level range).
   level: number
+  // Opt-in notification floor, independent of `level` — null means "notify
+  // for any matching HelpRequest". Only affects whether a request
+  // notifies/shows up for this character, never accept eligibility (still
+  // level >= HelpRequest.targetMinLevel).
+  notifyMinLevel: number | null
 }
 
 export type CharacterInput = Pick<
   Character,
-  "name" | "server" | "class" | "level"
+  "name" | "server" | "class" | "level" | "notifyMinLevel"
 >
 
 // Professions are per-account-per-server in the game: every character the
@@ -37,9 +42,14 @@ export interface Job {
   job: string
   // 1-200, same range as Character.level.
   level: number
+  // Mirrors Character.notifyMinLevel — see that field's comment.
+  notifyMinLevel: number | null
 }
 
-export type JobInput = Pick<Job, "server" | "characterId" | "job" | "level">
+export type JobInput = Pick<
+  Job,
+  "server" | "characterId" | "job" | "level" | "notifyMinLevel"
+>
 
 export interface Availability {
   characterId: string

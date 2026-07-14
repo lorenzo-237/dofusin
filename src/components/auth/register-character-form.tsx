@@ -44,6 +44,7 @@ export function RegisterCharacterForm({
       server,
       class: characterClass,
       level: parsedLevel,
+      notifyMinLevel: null,
     })
   }
 

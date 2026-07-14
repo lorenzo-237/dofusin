@@ -44,6 +44,9 @@ export function JobForm({
   const [level, setLevel] = React.useState(
     editingJob ? String(editingJob.level) : ""
   )
+  const [notifyMinLevel, setNotifyMinLevel] = React.useState(
+    editingJob?.notifyMinLevel ? String(editingJob.notifyMinLevel) : ""
+  )
   const [error, setError] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -58,12 +61,33 @@ export function JobForm({
       setError("Le niveau doit être un nombre entier entre 1 et 200.")
       return
     }
+    let parsedNotifyMinLevel: number | null = null
+    if (notifyMinLevel.trim()) {
+      parsedNotifyMinLevel = Number(notifyMinLevel.trim())
+      if (
+        !Number.isInteger(parsedNotifyMinLevel) ||
+        parsedNotifyMinLevel < 1 ||
+        parsedNotifyMinLevel > 200
+      ) {
+        setError(
+          "Le seuil de notification doit être un nombre entier entre 1 et 200."
+        )
+        return
+      }
+    }
     setError("")
     setIsSubmitting(true)
     try {
-      await onSubmit({ server, characterId, job, level: parsedLevel })
+      await onSubmit({
+        server,
+        characterId,
+        job,
+        level: parsedLevel,
+        notifyMinLevel: parsedNotifyMinLevel,
+      })
       if (!editingJob) {
         setLevel("")
+        setNotifyMinLevel("")
       }
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Une erreur est survenue.")
@@ -104,6 +128,17 @@ export function JobForm({
           onChange={(event) => setLevel(event.target.value)}
           placeholder="Niveau (1-200)"
           aria-label="Niveau"
+          className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+        />
+        <Input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={200}
+          value={notifyMinLevel}
+          onChange={(event) => setNotifyMinLevel(event.target.value)}
+          placeholder="Seuil de notification (optionnel)"
+          aria-label="Seuil de notification"
           className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         {error ? (
