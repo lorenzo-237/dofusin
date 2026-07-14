@@ -27,6 +27,11 @@ interface JobFormProps {
  * render this with `key={editingJob?.id ?? "new"}` so switching between
  * "add" and "edit X" remounts it with fresh values (same pattern as
  * CharacterForm).
+ *
+ * Renders just the `<form>` — no outer card/title — since the parent hosts
+ * it inside a bottom Sheet (title lives in SheetHeader/SheetTitle there).
+ * `onCancelEdit` closes the sheet regardless of add/edit mode, so the
+ * "Annuler" button is always shown, not just while editing.
  */
 export function JobForm({
   server,
@@ -97,70 +102,60 @@ export function JobForm({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4.5">
-      <div className="mb-3 font-heading text-[15px] font-bold">
-        {editingJob ? "Modifier le métier" : "Ajouter un métier"}
-        <span className="ml-1.5 font-sans text-xs font-normal text-muted-foreground">
-          sur {server}
-        </span>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+      <CharacterSelect
+        value={characterId}
+        onValueChange={setCharacterId}
+        characters={characters}
+        className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <JobSelect
+        value={job}
+        onValueChange={(next) => {
+          setJob(next)
+          setLastJob(next)
+        }}
+        className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <LevelRangeInput
+        value={level}
+        onChange={setLevel}
+        required
+        placeholder="Niveau (1-200)"
+        ariaLabel="Niveau"
+        inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <LevelRangeInput
+        value={notifyMinLevel}
+        onChange={setNotifyMinLevel}
+        placeholder="Seuil de notification (optionnel)"
+        ariaLabel="Seuil de notification"
+        inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      {error ? (
+        <p className="text-[13px] font-semibold text-destructive">{error}</p>
+      ) : null}
+      <div className="flex gap-2.5">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="h-auto flex-1 rounded-xl py-3.5 font-bold"
+        >
+          {isSubmitting
+            ? "Enregistrement..."
+            : editingJob
+              ? "Enregistrer"
+              : "Ajouter"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancelEdit}
+          className="h-auto rounded-xl px-3.5 py-3.5 font-bold text-muted-foreground"
+        >
+          Annuler
+        </Button>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
-        <CharacterSelect
-          value={characterId}
-          onValueChange={setCharacterId}
-          characters={characters}
-          className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <JobSelect
-          value={job}
-          onValueChange={(next) => {
-            setJob(next)
-            setLastJob(next)
-          }}
-          className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <LevelRangeInput
-          value={level}
-          onChange={setLevel}
-          required
-          placeholder="Niveau (1-200)"
-          ariaLabel="Niveau"
-          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <LevelRangeInput
-          value={notifyMinLevel}
-          onChange={setNotifyMinLevel}
-          placeholder="Seuil de notification (optionnel)"
-          ariaLabel="Seuil de notification"
-          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        {error ? (
-          <p className="text-[13px] font-semibold text-destructive">{error}</p>
-        ) : null}
-        <div className="flex gap-2.5">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-auto flex-1 rounded-xl py-3.5 font-bold"
-          >
-            {isSubmitting
-              ? "Enregistrement..."
-              : editingJob
-                ? "Enregistrer"
-                : "Ajouter"}
-          </Button>
-          {editingJob ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onCancelEdit}
-              className="h-auto rounded-xl px-3.5 py-3.5 font-bold text-muted-foreground"
-            >
-              Annuler
-            </Button>
-          ) : null}
-        </div>
-      </form>
-    </div>
+    </form>
   )
 }

@@ -22,6 +22,11 @@ interface CharacterFormProps {
  * fresh values instead of needing an effect to resync state. The server is
  * fixed to whatever's selected on the page (see routes/_authenticated/
  * characters.tsx) rather than picked here.
+ *
+ * Renders just the `<form>` — no outer card/title — since the parent hosts
+ * it inside a bottom Sheet (title lives in SheetHeader/SheetTitle there).
+ * `onCancelEdit` closes the sheet regardless of add/edit mode, so the
+ * "Annuler" button is always shown, not just while editing.
  */
 
 export function CharacterForm({
@@ -92,64 +97,54 @@ export function CharacterForm({
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4.5">
-      <div className="mb-3 font-heading text-[15px] font-bold">
-        {editingCharacter ? "Modifier le personnage" : "Ajouter un personnage"}
-        <span className="ml-1.5 font-sans text-xs font-normal text-muted-foreground">
-          sur {server}
-        </span>
+    <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
+      <Input
+        value={name}
+        onChange={(event) => setName(event.target.value)}
+        placeholder="Nom exact en jeu"
+        aria-label="Nom exact en jeu"
+        className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <ClassSelect
+        value={characterClass}
+        onValueChange={setCharacterClass}
+        className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <LevelRangeInput
+        value={level}
+        onChange={setLevel}
+        required
+        placeholder="Niveau (1-200)"
+        ariaLabel="Niveau"
+        inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      <LevelRangeInput
+        value={notifyMinLevel}
+        onChange={setNotifyMinLevel}
+        placeholder="Seuil de notification (optionnel)"
+        ariaLabel="Seuil de notification"
+        inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+      />
+      {error ? (
+        <p className="text-[13px] font-semibold text-destructive">{error}</p>
+      ) : null}
+      <div className="flex gap-2.5">
+        <Button
+          type="submit"
+          disabled={isSubmitting}
+          className="h-auto flex-1 rounded-xl py-3.5 font-bold"
+        >
+          {editingCharacter ? "Enregistrer" : "Ajouter"}
+        </Button>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={onCancelEdit}
+          className="h-auto rounded-xl px-3.5 py-3.5 font-bold text-muted-foreground"
+        >
+          Annuler
+        </Button>
       </div>
-      <form onSubmit={handleSubmit} className="flex flex-col gap-2.5">
-        <Input
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Nom exact en jeu"
-          aria-label="Nom exact en jeu"
-          className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <ClassSelect
-          value={characterClass}
-          onValueChange={setCharacterClass}
-          className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <LevelRangeInput
-          value={level}
-          onChange={setLevel}
-          required
-          placeholder="Niveau (1-200)"
-          ariaLabel="Niveau"
-          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        <LevelRangeInput
-          value={notifyMinLevel}
-          onChange={setNotifyMinLevel}
-          placeholder="Seuil de notification (optionnel)"
-          ariaLabel="Seuil de notification"
-          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
-        />
-        {error ? (
-          <p className="text-[13px] font-semibold text-destructive">{error}</p>
-        ) : null}
-        <div className="flex gap-2.5">
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="h-auto flex-1 rounded-xl py-3.5 font-bold"
-          >
-            {editingCharacter ? "Enregistrer" : "Ajouter"}
-          </Button>
-          {editingCharacter ? (
-            <Button
-              type="button"
-              variant="ghost"
-              onClick={onCancelEdit}
-              className="h-auto rounded-xl px-3.5 py-3.5 font-bold text-muted-foreground"
-            >
-              Annuler
-            </Button>
-          ) : null}
-        </div>
-      </form>
-    </div>
+    </form>
   )
 }
