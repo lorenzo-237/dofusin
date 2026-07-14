@@ -1,5 +1,5 @@
 import * as React from "react"
-import { Megaphone } from "lucide-react"
+import { Hammer, Megaphone, Users } from "lucide-react"
 import { toast } from "sonner"
 
 import { CharacterSelect } from "@/components/shared/character-select"
@@ -20,9 +20,13 @@ import { cn } from "@/lib/utils"
 
 type TargetType = "character" | "job"
 
-const TARGET_TYPES: { value: TargetType; label: string }[] = [
-  { value: "character", label: "Personnage" },
-  { value: "job", label: "Métier" },
+const TARGET_TYPES: {
+  value: TargetType
+  label: string
+  icon: typeof Users
+}[] = [
+  { value: "character", label: "Personnage", icon: Users },
+  { value: "job", label: "Métier", icon: Hammer },
 ]
 
 /**
@@ -121,12 +125,13 @@ export function CreateHelpRequestCard() {
             aria-pressed={targetType === type.value}
             onClick={() => setTargetType(type.value)}
             className={cn(
-              "flex-1 rounded-lg py-1.5 text-[13px] font-bold transition-colors",
+              "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-1.5 text-[13px] font-bold transition-colors",
               targetType === type.value
                 ? "bg-background text-foreground shadow-sm"
                 : "text-muted-foreground"
             )}
           >
+            <type.icon className="size-4 opacity-70" />
             {type.label}
           </button>
         ))}
