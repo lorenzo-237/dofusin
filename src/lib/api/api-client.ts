@@ -15,6 +15,8 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
+  LeaderboardEntry,
+  Profile,
   SearchFilters,
 } from "@/lib/types"
 
@@ -131,4 +133,10 @@ export interface ApiClient {
     id: string,
     reason: string
   ): Promise<HelpRequest>
+
+  // "Classement" screen — every account, sorted by xp desc.
+  getLeaderboard(token: string): Promise<LeaderboardEntry[]>
+
+  // "Profil" screen — the current user's own extended view (see Profile).
+  getProfile(token: string): Promise<Profile>
 }

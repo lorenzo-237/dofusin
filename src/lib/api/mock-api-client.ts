@@ -19,6 +19,8 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
+  LeaderboardEntry,
+  Profile,
   SearchFilters,
   User,
 } from "@/lib/types"
@@ -27,6 +29,9 @@ const STORAGE_KEY = "dofus-dispo:mock-db"
 const SIMULATED_LATENCY_MS = 350
 // Mirrors dofusin-api's DEFAULT_PAGE_SIZE (src/routes/help-requests.ts).
 const HELP_REQUEST_PAGE_SIZE = 20
+// Placeholder "member since" for the Profil screen — this mock DB never
+// actually records when the single mock account was first created.
+const MOCK_ACCOUNT_CREATED_AT = "2024-01-01T00:00:00.000Z"
 
 type MockUser = User
 
@@ -714,5 +719,38 @@ export class MockApiClient implements ApiClient {
     helpRequest.resolvedAt = new Date().toISOString()
     saveDb(db)
     return helpRequest
+  }
+
+  // Same single-mock-account limitation as getIncomingHelpRequests/
+  // getAcceptedHelpRequests above: with only one account, and no local xp
+  // counter in this mock DB, this always comes back as one entry at 0 xp.
+  async getLeaderboard(token: string): Promise<LeaderboardEntry[]> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const user = db.users.find((u) => u.id === userId)
+    if (!user) throw new ApiError("Utilisateur introuvable.", 404)
+    return [
+      { id: user.id, username: user.username, avatarUrl: user.avatarUrl ?? null, xp: 0 },
+    ]
+  }
+
+  // Same 0-xp, single-account limitation as getLeaderboard — always rank #1
+  // since it's the only account, with a fixed placeholder join date.
+  async getProfile(token: string): Promise<Profile> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const user = db.users.find((u) => u.id === userId)
+    if (!user) throw new ApiError("Utilisateur introuvable.", 404)
+    return {
+      id: user.id,
+      username: user.username,
+      avatarUrl: user.avatarUrl ?? null,
+      xp: 0,
+      strikes: 0,
+      createdAt: MOCK_ACCOUNT_CREATED_AT,
+      rank: 1,
+    }
   }
 }

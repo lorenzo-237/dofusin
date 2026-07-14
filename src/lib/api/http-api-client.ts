@@ -19,6 +19,8 @@ import type {
   JobInput,
   JobSearchFilters,
   JobSearchResult,
+  LeaderboardEntry,
+  Profile,
   SearchFilters,
 } from "@/lib/types"
 
@@ -312,5 +314,13 @@ export class HttpApiClient implements ApiClient {
       token,
       body: { reason },
     })
+  }
+
+  getLeaderboard(token: string): Promise<LeaderboardEntry[]> {
+    return request<LeaderboardEntry[]>("/users/leaderboard", { token })
+  }
+
+  getProfile(token: string): Promise<Profile> {
+    return request<Profile>("/users/me", { token })
   }
 }

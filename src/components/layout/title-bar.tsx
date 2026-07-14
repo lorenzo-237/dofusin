@@ -11,6 +11,8 @@ import {
   Moon,
   Settings,
   Sun,
+  Trophy,
+  UserRound,
   Users,
   X,
 } from "lucide-react"
@@ -82,6 +84,16 @@ export function TitleBar() {
 
       <div className="flex items-center gap-0.5">
         {user ? (
+          <Link
+            to="/classement"
+            aria-label="Classement"
+            className="flex size-7 items-center justify-center rounded-lg text-foreground/70 hover:bg-muted hover:text-foreground"
+          >
+            <Trophy className="size-4" />
+          </Link>
+        ) : null}
+
+        {user ? (
           <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
             <DropdownMenuTrigger
               aria-label="Menu"
@@ -90,6 +102,13 @@ export function TitleBar() {
               <Menu className="size-4" />
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
+              <DropdownMenuItem
+                render={<Link to="/profil" />}
+                onClick={() => setMenuOpen(false)}
+              >
+                <UserRound className="opacity-70" />
+                Profil
+              </DropdownMenuItem>
               <DropdownMenuItem
                 render={<Link to="/characters" />}
                 onClick={() => setMenuOpen(false)}

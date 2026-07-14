@@ -199,3 +199,28 @@ export type HelpRequestResponder =
   | { targetType: "character"; characterId: string }
   | { targetType: "job"; jobId: string }
 
+// One row per account, for the "Classement" screen — xp is the same running
+// counter incremented server-side on help-request accept/validate (see
+// dofusin-api's help-requests.ts and admin.ts's recalculateXp).
+export interface LeaderboardEntry {
+  id: string
+  username: string
+  avatarUrl: string | null
+  xp: number
+}
+
+// "Profil" screen — same account fields as LeaderboardEntry plus what only
+// makes sense for the current user's own view: strikes (see dispute-dialog,
+// incremented on a DISPUTED help request, never on the leaderboard row of
+// other accounts), createdAt, and rank (1-based position in the leaderboard,
+// computed server-side — ties share a rank).
+export interface Profile {
+  id: string
+  username: string
+  avatarUrl: string | null
+  xp: number
+  strikes: number
+  createdAt: string
+  rank: number
+}
+
