@@ -24,14 +24,13 @@ function HomeScreen() {
       <ReactivateBanner />
 
       <div className="mb-3 flex divide-x divide-border rounded-2xl border border-border bg-card">
-        <StatCard label="Personnages" value={characters.length} accent="primary" />
         <StatCard
-          label="Perso dispo"
+          label="Personnage actif"
           value={availabilities.length}
           accent="accent"
         />
         <StatCard
-          label="Métier dispo"
+          label="Métier actif"
           value={jobAvailabilities.length}
           accent="info"
         />

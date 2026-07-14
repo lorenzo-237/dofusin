@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { History, Inbox } from "lucide-react"
 
 import { IncomingHelpRequestList } from "@/components/help-requests/incoming-help-request-list"
 import { MyResponseList } from "@/components/help-requests/my-response-list"
@@ -55,12 +56,14 @@ function HelpRequestsScreen() {
       <Tabs key={tab ?? "default"} defaultValue={tab ?? "incoming"}>
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="incoming" className="flex-1">
+            <Inbox className="opacity-70" />
             Reçues
             {incomingHelpRequests.length > 0
               ? ` (${incomingHelpRequests.length})`
               : ""}
           </TabsTrigger>
           <TabsTrigger value="mine" className="flex-1">
+            <History className="opacity-70" />
             Mes réponses
           </TabsTrigger>
         </TabsList>

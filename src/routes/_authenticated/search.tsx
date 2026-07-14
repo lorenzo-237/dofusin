@@ -1,5 +1,6 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { Hammer, Users } from "lucide-react"
 
 import { JobSearchPanel } from "@/components/search/job-search-panel"
 import { SearchFiltersCard } from "@/components/search/search-filters-card"
@@ -39,9 +40,11 @@ function SearchScreen() {
       <Tabs defaultValue="characters">
         <TabsList className="mb-4 w-full">
           <TabsTrigger value="characters" className="flex-1">
+            <Users className="opacity-70" />
             Personnages
           </TabsTrigger>
           <TabsTrigger value="jobs" className="flex-1">
+            <Hammer className="opacity-70" />
             Métiers
           </TabsTrigger>
         </TabsList>

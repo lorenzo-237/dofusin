@@ -1,5 +1,6 @@
 import * as React from "react"
 import { createFileRoute } from "@tanstack/react-router"
+import { Hammer, Users } from "lucide-react"
 
 import { CharacterAvailabilityList } from "@/components/availability/character-availability-list"
 import { EmptyStateReminder } from "@/components/availability/empty-state-reminder"
@@ -102,6 +103,7 @@ function AvailabilityScreen() {
       characterId,
       job: job.job,
       level: job.level,
+      notifyMinLevel: job.notifyMinLevel,
     })
   }
 
@@ -128,6 +130,7 @@ function AvailabilityScreen() {
         characterId,
         job: job.job,
         level: job.level,
+        notifyMinLevel: job.notifyMinLevel,
       })
     })
   }
@@ -146,9 +149,11 @@ function AvailabilityScreen() {
       <Tabs defaultValue="characters">
         <TabsList className="mb-3 w-full">
           <TabsTrigger value="characters" className="flex-1">
+            <Users className="opacity-70" />
             Personnages
           </TabsTrigger>
           <TabsTrigger value="jobs" className="flex-1">
+            <Hammer className="opacity-70" />
             Métiers
           </TabsTrigger>
         </TabsList>
