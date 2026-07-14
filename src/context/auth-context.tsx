@@ -73,6 +73,10 @@ interface AuthContextValue {
   staleAvailabilities: Availability[]
   staleJobAvailabilities: JobAvailability[]
   reactivateAll: () => Promise<void>
+  // Mirror-opposite of reactivateAll — used by CloseConfirmDialog before
+  // the desktop window actually exits (closing doesn't clear availability
+  // on its own, see dofusin-api's POST .../deactivate).
+  deactivateAll: () => Promise<void>
 
   loginWithDiscord: () => Promise<void>
   cancelDiscordLogin: () => void
@@ -473,6 +477,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setStaleJobAvailabilities([])
   }, [requireToken])
 
+  // Mirror-opposite of reactivateAll. Moves today's rows into the stale
+  // lists locally (matching what the server just did to them) rather than
+  // re-fetching — good enough since the only caller (CloseConfirmDialog)
+  // runs this right before the window exits.
+  const deactivateAll = React.useCallback(async () => {
+    const activeToken = requireToken()
+    await Promise.all([
+      getApiClient().deactivateAvailabilities(activeToken),
+      getApiClient().deactivateJobAvailabilities(activeToken),
+    ])
+    setStaleAvailabilities((prev) => [...prev, ...availabilities])
+    setStaleJobAvailabilities((prev) => [...prev, ...jobAvailabilities])
+    setAvailabilities([])
+    setJobAvailabilities([])
+  }, [requireToken, availabilities, jobAvailabilities])
+
   const createCharacter = React.useCallback(
     async (input: CharacterInput) => {
       const activeToken = requireToken()
@@ -735,6 +755,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       staleAvailabilities,
       staleJobAvailabilities,
       reactivateAll,
+      deactivateAll,
       loginWithDiscord,
       cancelDiscordLogin,
       logout,
@@ -776,6 +797,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       staleAvailabilities,
       staleJobAvailabilities,
       reactivateAll,
+      deactivateAll,
       loginWithDiscord,
       cancelDiscordLogin,
       logout,

@@ -1,7 +1,7 @@
 import type { ApiClient } from "@/lib/api/api-client"
 import { ApiError } from "@/lib/api/api-client"
 import { MOCK_HELPERS_POOL, MOCK_JOB_HELPERS_POOL } from "@/lib/api/mock-data"
-import { todayISODate } from "@/lib/date"
+import { todayISODate, yesterdayISODate } from "@/lib/date"
 import type {
   Availability,
   AvailabilityInput,
@@ -314,6 +314,23 @@ export class MockApiClient implements ApiClient {
     )
   }
 
+  async deactivateJobAvailabilities(token: string): Promise<void> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myJobIds = new Set(
+      db.jobs.filter((j) => j.userId === userId).map((j) => j.id)
+    )
+    const today = todayISODate()
+    const yesterday = yesterdayISODate()
+    db.jobAvailabilities = db.jobAvailabilities.map((a) =>
+      myJobIds.has(a.jobId) && a.availableDate === today
+        ? { ...a, availableDate: yesterday }
+        : a
+    )
+    saveDb(db)
+  }
+
   async getMyAvailabilities(token: string): Promise<Availability[]> {
     await delay()
     const db = loadDb()
@@ -387,6 +404,23 @@ export class MockApiClient implements ApiClient {
     return db.availabilities.filter(
       (a) => myCharacterIds.has(a.characterId) && a.availableDate === today
     )
+  }
+
+  async deactivateAvailabilities(token: string): Promise<void> {
+    await delay()
+    const db = loadDb()
+    const userId = this.resolveUserId(db, token)
+    const myCharacterIds = new Set(
+      db.characters.filter((c) => c.userId === userId).map((c) => c.id)
+    )
+    const today = todayISODate()
+    const yesterday = yesterdayISODate()
+    db.availabilities = db.availabilities.map((a) =>
+      myCharacterIds.has(a.characterId) && a.availableDate === today
+        ? { ...a, availableDate: yesterday }
+        : a
+    )
+    saveDb(db)
   }
 
   async searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]> {

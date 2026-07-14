@@ -171,6 +171,10 @@ export class HttpApiClient implements ApiClient {
     })
   }
 
+  async deactivateAvailabilities(token: string): Promise<void> {
+    await request("/availability/deactivate", { method: "POST", token })
+  }
+
   // Not in the cahier des charges: being available for a job (e.g.
   // crafting for hire) is separate from character availability, so it
   // gets its own mirror of the /availability routes keyed by jobId.
@@ -205,6 +209,10 @@ export class HttpApiClient implements ApiClient {
       method: "POST",
       token,
     })
+  }
+
+  async deactivateJobAvailabilities(token: string): Promise<void> {
+    await request("/job-availability/deactivate", { method: "POST", token })
   }
 
   // Not in the cahier des charges: each result also carries `jobs`, the

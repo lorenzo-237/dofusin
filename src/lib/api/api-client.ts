@@ -70,6 +70,12 @@ export interface ApiClient {
   // character by character.
   getStaleAvailabilities(token: string): Promise<Availability[]>
   reactivateAvailabilities(token: string): Promise<Availability[]>
+  // Mirror-opposite of reactivateAvailabilities — restamps every one of
+  // today's rows to yesterday (keeping free/price), so they fall into
+  // "stale" instead. Used by the desktop app's close-confirmation flow
+  // (CloseConfirmDialog): closing doesn't clear availability on its own,
+  // this is what actually does it before the window exits.
+  deactivateAvailabilities(token: string): Promise<void>
 
   // Being "available" for a job (e.g. crafting for hire) is tracked
   // separately from character availability — a job isn't a character (see
@@ -84,6 +90,7 @@ export interface ApiClient {
   // Mirrors getStaleAvailabilities/reactivateAvailabilities for jobs.
   getStaleJobAvailabilities(token: string): Promise<JobAvailability[]>
   reactivateJobAvailabilities(token: string): Promise<JobAvailability[]>
+  deactivateJobAvailabilities(token: string): Promise<void>
 
   searchHelpers(filters: SearchFilters): Promise<HelperSearchResult[]>
 

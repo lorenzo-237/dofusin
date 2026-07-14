@@ -19,7 +19,17 @@ pub fn setup_tray(app: &AppHandle) -> tauri::Result<()> {
     .tooltip("DofusIn")
     .on_menu_event(|app, event| match event.id.as_ref() {
       "show" => show_main_window(app),
-      "quit" => app.exit(0),
+      // Routes through the same window-close flow as the title bar's X
+      // button (onCloseRequested, see CloseConfirmDialog) instead of a
+      // hard app.exit(0) — otherwise "Quitter" would skip the
+      // confirmation/availability-deactivation prompt entirely.
+      "quit" => {
+        if let Some(window) = app.get_webview_window("main") {
+          let _ = window.close();
+        } else {
+          app.exit(0);
+        }
+      }
       _ => {}
     })
     .on_tray_icon_event(|tray, event| {
