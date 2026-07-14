@@ -1,5 +1,7 @@
 import type { ApiClient } from "@/lib/api/api-client"
 import { ApiError } from "@/lib/api/api-client"
+import { getSession } from "@/lib/auth-store"
+import { notifySessionExpired } from "@/lib/session-expiry"
 import type {
   Availability,
   AvailabilityInput,
@@ -9,6 +11,7 @@ import type {
   HelperSearchResult,
   HelpRequest,
   HelpRequestInput,
+  HelpRequestPage,
   HelpRequestResponder,
   Job,
   JobAvailability,
@@ -45,6 +48,16 @@ async function request<T>(
   }
 
   if (!response.ok) {
+    // A 401 on a request that carried a token means the JWT (30d TTL, see
+    // dofusin-api/src/lib/jwt.ts) is expired or otherwise invalid — without
+    // this, the app just stays visually "logged in" while every request
+    // silently fails. Guarded by getSession() so the burst of parallel
+    // requests AuthProvider fires on mount only triggers the logout+redirect
+    // once (the first 401 processed clears the session synchronously, so
+    // every other 401 already in flight sees session === null and skips).
+    if (response.status === 401 && options.token && getSession()) {
+      notifySessionExpired()
+    }
     const message = await response
       .json()
       .then((data: { message?: string }) => data.message)
@@ -235,12 +248,19 @@ export class HttpApiClient implements ApiClient {
     return request<HelpRequest[]>("/help-requests/incoming", { token })
   }
 
-  getMyHelpRequests(token: string): Promise<HelpRequest[]> {
-    return request<HelpRequest[]>("/help-requests/mine", { token })
+  getMyHelpRequests(token: string, cursor?: string): Promise<HelpRequestPage> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""
+    return request<HelpRequestPage>(`/help-requests/mine${query}`, { token })
   }
 
-  getAcceptedHelpRequests(token: string): Promise<HelpRequest[]> {
-    return request<HelpRequest[]>("/help-requests/accepted", { token })
+  getAcceptedHelpRequests(
+    token: string,
+    cursor?: string
+  ): Promise<HelpRequestPage> {
+    const query = cursor ? `?cursor=${encodeURIComponent(cursor)}` : ""
+    return request<HelpRequestPage>(`/help-requests/accepted${query}`, {
+      token,
+    })
   }
 
   acceptHelpRequest(

@@ -7,6 +7,7 @@ import type {
   HelperSearchResult,
   HelpRequest,
   HelpRequestInput,
+  HelpRequestPage,
   HelpRequestResponder,
   Job,
   JobAvailability,
@@ -98,10 +99,15 @@ export interface ApiClient {
   // missed while offline.
   createHelpRequest(token: string, input: HelpRequestInput): Promise<HelpRequest>
   getIncomingHelpRequests(token: string): Promise<HelpRequest[]>
-  getMyHelpRequests(token: string): Promise<HelpRequest[]>
+  // Cursor-paginated (see HelpRequestPage) — cursor omitted fetches the
+  // first page.
+  getMyHelpRequests(token: string, cursor?: string): Promise<HelpRequestPage>
   // Symmetric to getMyHelpRequests but from the helper's side — catch-up
   // for help-request:resolved if I was offline when it got validated/disputed.
-  getAcceptedHelpRequests(token: string): Promise<HelpRequest[]>
+  getAcceptedHelpRequests(
+    token: string,
+    cursor?: string
+  ): Promise<HelpRequestPage>
   acceptHelpRequest(
     token: string,
     id: string,

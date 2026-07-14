@@ -31,6 +31,12 @@ function HelpRequestsScreen() {
     incomingHelpRequests,
     myHelpRequests,
     acceptedHelpRequests,
+    myHelpRequestsHasMore,
+    acceptedHelpRequestsHasMore,
+    isLoadingMoreMyHelpRequests,
+    isLoadingMoreAcceptedHelpRequests,
+    loadMoreMyHelpRequests,
+    loadMoreAcceptedHelpRequests,
     availabilities,
     jobAvailabilities,
     lastAcceptedHelpRequest,
@@ -73,6 +79,14 @@ function HelpRequestsScreen() {
           <MyResponseList
             myHelpRequests={myHelpRequests}
             acceptedHelpRequests={acceptedHelpRequests}
+            myHelpRequestsHasMore={myHelpRequestsHasMore}
+            acceptedHelpRequestsHasMore={acceptedHelpRequestsHasMore}
+            isLoadingMoreMyHelpRequests={isLoadingMoreMyHelpRequests}
+            isLoadingMoreAcceptedHelpRequests={isLoadingMoreAcceptedHelpRequests}
+            onLoadMoreMyHelpRequests={() => void loadMoreMyHelpRequests()}
+            onLoadMoreAcceptedHelpRequests={() =>
+              void loadMoreAcceptedHelpRequests()
+            }
           />
         </TabsContent>
       </Tabs>

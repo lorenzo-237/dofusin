@@ -23,6 +23,7 @@ import type {
   User,
 } from "@/lib/types"
 import { showNotificationPopup } from "@/lib/notification-window"
+import { onSessionExpired } from "@/lib/session-expiry"
 import { connectWs, disconnectWs, onWsEvent } from "@/lib/ws-client"
 
 function describeHelpRequestTarget(request: HelpRequest): string {
@@ -99,6 +100,15 @@ interface AuthContextValue {
   incomingHelpRequests: HelpRequest[]
   myHelpRequests: HelpRequest[]
   acceptedHelpRequests: HelpRequest[]
+  // Cursor pagination (see HelpRequestPage) — myHelpRequests/
+  // acceptedHelpRequests above only ever hold what's been loaded so far
+  // (first page on login, more appended by these two loaders on demand).
+  myHelpRequestsHasMore: boolean
+  acceptedHelpRequestsHasMore: boolean
+  isLoadingMoreMyHelpRequests: boolean
+  isLoadingMoreAcceptedHelpRequests: boolean
+  loadMoreMyHelpRequests: () => Promise<void>
+  loadMoreAcceptedHelpRequests: () => Promise<void>
   createHelpRequest: (input: HelpRequestInput) => Promise<void>
   dismissIncomingHelpRequest: (id: string) => void
   acceptHelpRequest: (
@@ -150,6 +160,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [acceptedHelpRequests, setAcceptedHelpRequests] = React.useState<
     HelpRequest[]
   >([])
+  const [myHelpRequestsCursor, setMyHelpRequestsCursor] = React.useState<
+    string | null
+  >(null)
+  const [acceptedHelpRequestsCursor, setAcceptedHelpRequestsCursor] =
+    React.useState<string | null>(null)
+  const [isLoadingMoreMyHelpRequests, setIsLoadingMoreMyHelpRequests] =
+    React.useState(false)
+  const [
+    isLoadingMoreAcceptedHelpRequests,
+    setIsLoadingMoreAcceptedHelpRequests,
+  ] = React.useState(false)
   const [lastAcceptedHelpRequest, setLastAcceptedHelpRequest] =
     React.useState<HelpRequest | null>(null)
 
@@ -186,8 +207,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         nextStaleAvailabilities,
         nextStaleJobAvailabilities,
         nextIncomingHelpRequests,
-        nextMyHelpRequests,
-        nextAcceptedHelpRequests,
+        nextMyHelpRequestsPage,
+        nextAcceptedHelpRequestsPage,
       ]) => {
         if (cancelled) return
         setCharacters(nextCharacters)
@@ -197,8 +218,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setStaleAvailabilities(nextStaleAvailabilities)
         setStaleJobAvailabilities(nextStaleJobAvailabilities)
         setIncomingHelpRequests(nextIncomingHelpRequests)
-        setMyHelpRequests(nextMyHelpRequests)
-        setAcceptedHelpRequests(nextAcceptedHelpRequests)
+        setMyHelpRequests(nextMyHelpRequestsPage.items)
+        setMyHelpRequestsCursor(nextMyHelpRequestsPage.nextCursor)
+        setAcceptedHelpRequests(nextAcceptedHelpRequestsPage.items)
+        setAcceptedHelpRequestsCursor(nextAcceptedHelpRequestsPage.nextCursor)
         setLoadedForToken(token)
       }
     )
@@ -407,7 +430,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIncomingHelpRequests([])
     setMyHelpRequests([])
     setAcceptedHelpRequests([])
+    setMyHelpRequestsCursor(null)
+    setAcceptedHelpRequestsCursor(null)
     setLastAcceptedHelpRequest(null)
+  }, [])
+
+  // Kept in a ref (updated on identity change, read inside a listener
+  // registered exactly once) so the subscription below doesn't need
+  // `logout`/`navigate` as effect deps — same pattern as goToHelpRequestsRef
+  // further up, for the same reason (register once, not on every render).
+  const handleSessionExpiredRef = React.useRef(() => {})
+  React.useEffect(() => {
+    handleSessionExpiredRef.current = () => {
+      logout()
+      toast.error("Session expirée, merci de te reconnecter.")
+      void navigate({ to: "/login" })
+    }
+  }, [logout, navigate])
+
+  // Fired by http-api-client.ts when an authenticated request comes back
+  // 401 (expired/invalid JWT, 30d TTL — see dofusin-api/src/lib/jwt.ts).
+  // Without this the app stays visually "logged in" while every request
+  // silently fails until the user manually logs out.
+  React.useEffect(() => {
+    return onSessionExpired(() => handleSessionExpiredRef.current())
   }, [])
 
   const requireToken = React.useCallback(() => {
@@ -543,6 +589,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     [requireToken]
   )
 
+  const loadMoreMyHelpRequests = React.useCallback(async () => {
+    const activeToken = requireToken()
+    if (!myHelpRequestsCursor || isLoadingMoreMyHelpRequests) return
+    setIsLoadingMoreMyHelpRequests(true)
+    try {
+      const page = await getApiClient().getMyHelpRequests(
+        activeToken,
+        myHelpRequestsCursor
+      )
+      setMyHelpRequests((prev) => [...prev, ...page.items])
+      setMyHelpRequestsCursor(page.nextCursor)
+    } finally {
+      setIsLoadingMoreMyHelpRequests(false)
+    }
+  }, [requireToken, myHelpRequestsCursor, isLoadingMoreMyHelpRequests])
+
+  const loadMoreAcceptedHelpRequests = React.useCallback(async () => {
+    const activeToken = requireToken()
+    if (!acceptedHelpRequestsCursor || isLoadingMoreAcceptedHelpRequests) return
+    setIsLoadingMoreAcceptedHelpRequests(true)
+    try {
+      const page = await getApiClient().getAcceptedHelpRequests(
+        activeToken,
+        acceptedHelpRequestsCursor
+      )
+      setAcceptedHelpRequests((prev) => [...prev, ...page.items])
+      setAcceptedHelpRequestsCursor(page.nextCursor)
+    } finally {
+      setIsLoadingMoreAcceptedHelpRequests(false)
+    }
+  }, [
+    requireToken,
+    acceptedHelpRequestsCursor,
+    isLoadingMoreAcceptedHelpRequests,
+  ])
+
   const createHelpRequest = React.useCallback(
     async (input: HelpRequestInput) => {
       const activeToken = requireToken()
@@ -668,6 +750,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       incomingHelpRequests,
       myHelpRequests,
       acceptedHelpRequests,
+      myHelpRequestsHasMore: myHelpRequestsCursor !== null,
+      acceptedHelpRequestsHasMore: acceptedHelpRequestsCursor !== null,
+      isLoadingMoreMyHelpRequests,
+      isLoadingMoreAcceptedHelpRequests,
+      loadMoreMyHelpRequests,
+      loadMoreAcceptedHelpRequests,
       createHelpRequest,
       dismissIncomingHelpRequest,
       acceptHelpRequest,
@@ -703,6 +791,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       incomingHelpRequests,
       myHelpRequests,
       acceptedHelpRequests,
+      myHelpRequestsCursor,
+      acceptedHelpRequestsCursor,
+      isLoadingMoreMyHelpRequests,
+      isLoadingMoreAcceptedHelpRequests,
+      loadMoreMyHelpRequests,
+      loadMoreAcceptedHelpRequests,
       createHelpRequest,
       dismissIncomingHelpRequest,
       acceptHelpRequest,

@@ -9,6 +9,12 @@ import type { HelpRequest } from "@/lib/types"
 interface MyResponseListProps {
   myHelpRequests: HelpRequest[]
   acceptedHelpRequests: HelpRequest[]
+  myHelpRequestsHasMore: boolean
+  acceptedHelpRequestsHasMore: boolean
+  isLoadingMoreMyHelpRequests: boolean
+  isLoadingMoreAcceptedHelpRequests: boolean
+  onLoadMoreMyHelpRequests: () => void
+  onLoadMoreAcceptedHelpRequests: () => void
 }
 
 type Role = "demandes" | "aides"
@@ -33,6 +39,12 @@ function isActive(request: HelpRequest): boolean {
 export function MyResponseList({
   myHelpRequests,
   acceptedHelpRequests,
+  myHelpRequestsHasMore,
+  acceptedHelpRequestsHasMore,
+  isLoadingMoreMyHelpRequests,
+  isLoadingMoreAcceptedHelpRequests,
+  onLoadMoreMyHelpRequests,
+  onLoadMoreAcceptedHelpRequests,
 }: MyResponseListProps) {
   const [role, setRole] = React.useState<Role>("demandes")
   const [historyOpen, setHistoryOpen] = React.useState(false)
@@ -52,6 +64,11 @@ export function MyResponseList({
   const active = items.filter(isActive)
   const resolved = items.filter((r) => !isActive(r))
   const CardComponent = role === "demandes" ? MyHelpRequestCard : AcceptedHelpRequestCard
+  const hasMore = role === "demandes" ? myHelpRequestsHasMore : acceptedHelpRequestsHasMore
+  const isLoadingMore =
+    role === "demandes" ? isLoadingMoreMyHelpRequests : isLoadingMoreAcceptedHelpRequests
+  const onLoadMore =
+    role === "demandes" ? onLoadMoreMyHelpRequests : onLoadMoreAcceptedHelpRequests
 
   return (
     <div className="flex flex-col gap-3">
@@ -118,6 +135,16 @@ export function MyResponseList({
                   {resolved.map((request) => (
                     <CardComponent key={request.id} request={request} />
                   ))}
+                  {hasMore ? (
+                    <button
+                      type="button"
+                      onClick={onLoadMore}
+                      disabled={isLoadingMore}
+                      className="rounded-xl border border-dashed border-border py-2 text-[13px] font-bold text-muted-foreground disabled:opacity-60"
+                    >
+                      {isLoadingMore ? "Chargement..." : "Charger plus"}
+                    </button>
+                  ) : null}
                 </div>
               ) : null}
             </div>

@@ -158,6 +158,15 @@ export interface HelpRequest {
   createdAt: string
 }
 
+// GET /help-requests/mine and /accepted are paginated by cursor (the last
+// item's id from the previous page), not by numeric offset — an offset
+// shifts every time a new request is created between two calls, a cursor
+// doesn't. nextCursor is null once there's no further page.
+export interface HelpRequestPage {
+  items: HelpRequest[]
+  nextCursor: string | null
+}
+
 export type HelpRequestInput =
   | {
       targetType: "character"

@@ -11,6 +11,7 @@ import type {
   HelperSearchResult,
   HelpRequest,
   HelpRequestInput,
+  HelpRequestPage,
   HelpRequestResponder,
   Job,
   JobAvailability,
@@ -24,6 +25,8 @@ import type {
 
 const STORAGE_KEY = "dofus-dispo:mock-db"
 const SIMULATED_LATENCY_MS = 350
+// Mirrors dofusin-api's DEFAULT_PAGE_SIZE (src/routes/help-requests.ts).
+const HELP_REQUEST_PAGE_SIZE = 20
 
 type MockUser = User
 
@@ -80,6 +83,22 @@ function generateId(): string {
 
 function toSession(user: MockUser, token: string): AuthSession {
   return { user: { id: user.id, username: user.username }, token }
+}
+
+// Mirrors dofusin-api's cursor pagination (id of the last item from the
+// previous page) over an already sorted-desc array.
+function paginate(
+  sorted: HelpRequest[],
+  cursor: string | undefined,
+  limit: number
+): HelpRequestPage {
+  const startIndex = cursor
+    ? sorted.findIndex((r) => r.id === cursor) + 1
+    : 0
+  const page = sorted.slice(startIndex, startIndex + limit)
+  const nextCursor =
+    startIndex + limit < sorted.length ? page[page.length - 1]?.id ?? null : null
+  return { items: page, nextCursor }
 }
 
 /**
@@ -502,25 +521,33 @@ export class MockApiClient implements ApiClient {
     )
   }
 
-  async getMyHelpRequests(token: string): Promise<HelpRequest[]> {
+  async getMyHelpRequests(
+    token: string,
+    cursor?: string
+  ): Promise<HelpRequestPage> {
     await delay()
     const db = loadDb()
     const userId = this.resolveUserId(db, token)
-    return db.helpRequests
+    const sorted = db.helpRequests
       .filter((r) => r.requesterId === userId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    return paginate(sorted, cursor, HELP_REQUEST_PAGE_SIZE)
   }
 
   // Always empty in practice, same reason as acceptHelpRequest can never
   // actually succeed in mock mode: a single account can't accept its own
   // requests.
-  async getAcceptedHelpRequests(token: string): Promise<HelpRequest[]> {
+  async getAcceptedHelpRequests(
+    token: string,
+    cursor?: string
+  ): Promise<HelpRequestPage> {
     await delay()
     const db = loadDb()
     const userId = this.resolveUserId(db, token)
-    return db.helpRequests
+    const sorted = db.helpRequests
       .filter((r) => r.helperId === userId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+    return paginate(sorted, cursor, HELP_REQUEST_PAGE_SIZE)
   }
 
   async acceptHelpRequest(
