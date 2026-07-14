@@ -36,11 +36,13 @@ function describeHelpRequestTarget(request: HelpRequest): string {
 
 // Kept as a plain string union here (not imported from the route file) so
 // this context doesn't depend on a specific route module — routes already
-// depend on this context (useAuth), not the other way around.
-type HelpRequestsTab = "create" | "incoming" | "mine"
+// depend on this context (useAuth), not the other way around. "create" no
+// longer exists — "Demander" moved to Accueil, see
+// routes/_authenticated/index.tsx.
+type HelpRequestsTab = "incoming" | "mine"
 
 function isHelpRequestsTab(value: string): value is HelpRequestsTab {
-  return value === "create" || value === "incoming" || value === "mine"
+  return value === "incoming" || value === "mine"
 }
 
 // Discord OAuth2 rejects custom URI schemes as redirect_uri — this loopback

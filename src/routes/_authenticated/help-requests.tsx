@@ -1,6 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router"
 
-import { CreateHelpRequestCard } from "@/components/help-requests/create-help-request-card"
 import { IncomingHelpRequestList } from "@/components/help-requests/incoming-help-request-list"
 import { MyResponseList } from "@/components/help-requests/my-response-list"
 import { CopyCommandButton } from "@/components/shared/copy-command-button"
@@ -8,9 +7,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/auth-context"
 import { buildHelperIntroMessage } from "@/lib/help-request-message"
 
-export type HelpRequestsTab = "create" | "incoming" | "mine"
+// "Demander" moved to Accueil (see routes/_authenticated/index.tsx) for
+// quick access — CreateHelpRequestCard no longer lives here.
+export type HelpRequestsTab = "incoming" | "mine"
 
-const TABS: HelpRequestsTab[] = ["create", "incoming", "mine"]
+const TABS: HelpRequestsTab[] = ["incoming", "mine"]
 
 function isHelpRequestsTab(value: unknown): value is HelpRequestsTab {
   return typeof value === "string" && TABS.includes(value as HelpRequestsTab)
@@ -53,9 +54,6 @@ function HelpRequestsScreen() {
           never trigger this. */}
       <Tabs key={tab ?? "default"} defaultValue={tab ?? "incoming"}>
         <TabsList className="mb-4 w-full">
-          <TabsTrigger value="create" className="flex-1">
-            Demander
-          </TabsTrigger>
           <TabsTrigger value="incoming" className="flex-1">
             Reçues
             {incomingHelpRequests.length > 0
@@ -66,10 +64,6 @@ function HelpRequestsScreen() {
             Mes réponses
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="create">
-          <CreateHelpRequestCard />
-        </TabsContent>
 
         <TabsContent value="incoming">
           <IncomingHelpRequestList requests={incomingHelpRequests} />

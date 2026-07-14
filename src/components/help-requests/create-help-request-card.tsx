@@ -113,11 +113,6 @@ export function CreateHelpRequestCard() {
 
   return (
     <div className="flex flex-col gap-3 rounded-2xl border border-border bg-card p-4">
-      <p className="text-[13px] text-muted-foreground">
-        Notifie en direct tous les joueurs actuellement disponibles qui
-        correspondent à ta recherche.
-      </p>
-
       <div className="flex gap-1.5 rounded-xl bg-muted p-1">
         {TARGET_TYPES.map((type) => (
           <button
@@ -186,12 +181,7 @@ export function CreateHelpRequestCard() {
             className="h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
           />
         </div>
-      ) : (
-        <p className="text-[13px] text-destructive">
-          Ajoute d'abord un personnage sur ce serveur pour pouvoir demander de
-          l'aide (menu ☰ → Mes personnages).
-        </p>
-      )}
+      ) : null}
 
       <Button
         disabled={isSending || !requesterCharacterId}

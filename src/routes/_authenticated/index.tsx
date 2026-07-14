@@ -1,10 +1,9 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { LifeBuoy } from "lucide-react"
+import { createFileRoute } from "@tanstack/react-router"
 
+import { CreateHelpRequestCard } from "@/components/help-requests/create-help-request-card"
 import { ReactivateBanner } from "@/components/home/reactivate-banner"
 import { StatCard } from "@/components/home/stat-card"
 import { TodaysAvailabilityList } from "@/components/home/todays-availability-list"
-import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -15,7 +14,6 @@ export const Route = createFileRoute("/_authenticated/")({
 function HomeScreen() {
   const { user, characters, availabilities, jobs, jobAvailabilities } =
     useAuth()
-  const navigate = useNavigate()
 
   return (
     <div className="pt-1">
@@ -39,13 +37,12 @@ function HomeScreen() {
         />
       </div>
 
-      <Button
-        onClick={() => navigate({ to: "/help-requests" })}
-        className="mb-3 h-auto w-full gap-1.5 rounded-2xl bg-accent py-2.5 font-heading text-[15px] font-bold text-white hover:bg-accent/90"
-      >
-        <LifeBuoy className="size-4" />
-        Entraide
-      </Button>
+      <div className="mb-2 font-heading text-[15px] font-bold">
+        Demander de l'aide
+      </div>
+      <div className="mb-3">
+        <CreateHelpRequestCard />
+      </div>
 
       <div className="mb-2 font-heading text-[15px] font-bold">
         Mes dispos du jour
