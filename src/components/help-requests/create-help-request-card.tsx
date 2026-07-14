@@ -5,9 +5,9 @@ import { toast } from "sonner"
 import { CharacterSelect } from "@/components/shared/character-select"
 import { ClassSelect } from "@/components/shared/class-select"
 import { JobSelect } from "@/components/shared/job-select"
+import { LevelRangeInput } from "@/components/shared/level-range-input"
 import { ServerSelect } from "@/components/shared/server-select"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
 import { ApiError } from "@/lib/api"
 import {
@@ -153,16 +153,12 @@ export function CreateHelpRequestCard() {
         />
       )}
 
-      <Input
-        type="number"
-        inputMode="numeric"
-        min={1}
-        max={200}
+      <LevelRangeInput
         value={targetMinLevel}
-        onChange={(event) => setTargetMinLevel(event.target.value)}
+        onChange={setTargetMinLevel}
         placeholder="Niveau min (optionnel)"
-        aria-label="Niveau min"
-        className="h-auto rounded-xl bg-muted px-2.5 py-2.5 text-sm"
+        ariaLabel="Niveau min"
+        inputClassName="h-auto rounded-xl bg-muted px-2.5 py-2.5 text-sm"
       />
 
       {error ? (

@@ -2,8 +2,8 @@ import * as React from "react"
 
 import { CharacterSelect } from "@/components/shared/character-select"
 import { JobSelect } from "@/components/shared/job-select"
+import { LevelRangeInput } from "@/components/shared/level-range-input"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { ApiError } from "@/lib/api"
 import { getLastJob, setLastJob } from "@/lib/last-selection-store"
 import type { Character, Job, JobInput } from "@/lib/types"
@@ -119,27 +119,20 @@ export function JobForm({
           }}
           className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={200}
+        <LevelRangeInput
           value={level}
-          onChange={(event) => setLevel(event.target.value)}
+          onChange={setLevel}
+          required
           placeholder="Niveau (1-200)"
-          aria-label="Niveau"
-          className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+          ariaLabel="Niveau"
+          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
-        <Input
-          type="number"
-          inputMode="numeric"
-          min={1}
-          max={200}
+        <LevelRangeInput
           value={notifyMinLevel}
-          onChange={(event) => setNotifyMinLevel(event.target.value)}
+          onChange={setNotifyMinLevel}
           placeholder="Seuil de notification (optionnel)"
-          aria-label="Seuil de notification"
-          className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
+          ariaLabel="Seuil de notification"
+          inputClassName="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         {error ? (
           <p className="text-[13px] font-semibold text-destructive">{error}</p>
