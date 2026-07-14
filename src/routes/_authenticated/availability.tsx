@@ -155,7 +155,11 @@ function AvailabilityScreen() {
 
         <TabsContent value="characters">
           {serverCharacters.length === 0 ? (
-            <EmptyStateReminder message="Aucun personnage sur ce serveur pour l'instant." />
+            <EmptyStateReminder
+              message="Aucun personnage sur ce serveur pour l'instant."
+              to="/characters"
+              ctaLabel="Configurer mes personnages →"
+            />
           ) : (
             <CharacterAvailabilityList
               characters={serverCharacters}
@@ -168,7 +172,11 @@ function AvailabilityScreen() {
 
         <TabsContent value="jobs">
           {serverJobs.length === 0 ? (
-            <EmptyStateReminder message="Aucun métier sur ce serveur pour l'instant." />
+            <EmptyStateReminder
+              message="Aucun métier sur ce serveur pour l'instant."
+              to="/jobs"
+              ctaLabel="Configurer mes métiers →"
+            />
           ) : (
             <>
               <JobAvailabilityBulkBar

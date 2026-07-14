@@ -3,6 +3,7 @@ import { isTauri } from "@tauri-apps/api/core"
 import { getCurrentWindow } from "@tauri-apps/api/window"
 import { Link, useMatches, useNavigate } from "@tanstack/react-router"
 import {
+  Hammer,
   LogOut,
   Menu,
   Minus,
@@ -95,6 +96,13 @@ export function TitleBar() {
               >
                 <Users className="opacity-70" />
                 Mes persos
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                render={<Link to="/jobs" />}
+                onClick={() => setMenuOpen(false)}
+              >
+                <Hammer className="opacity-70" />
+                Mes métiers
               </DropdownMenuItem>
               <DropdownMenuItem
                 render={<Link to="/settings" />}
