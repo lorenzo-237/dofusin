@@ -3,12 +3,13 @@ import { Check } from "lucide-react"
 import { toast } from "sonner"
 
 import { DisputeDialog } from "@/components/help-requests/dispute-dialog"
+import { HelpRequestContact } from "@/components/help-requests/help-request-contact"
 import { HelpRequestStatusBadge } from "@/components/help-requests/help-request-status-badge"
-import { Badge } from "@/components/ui/badge"
+import { HelpRequestTargetBadge } from "@/components/help-requests/help-request-target-badge"
+import { CopyCommandButton } from "@/components/shared/copy-command-button"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import { ApiError } from "@/lib/api"
-import { jobColor } from "@/lib/game-data"
 import type { HelpRequest } from "@/lib/types"
 
 interface MyHelpRequestCardProps {
@@ -41,18 +42,7 @@ export function MyHelpRequestCard({ request }: MyHelpRequestCardProps) {
       </div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          {request.targetType === "job" ? (
-            <Badge
-              style={{ backgroundColor: jobColor(request.targetJob ?? "") }}
-              className="h-5 rounded-full px-2 text-[11px] font-bold text-white"
-            >
-              {request.targetJob}
-            </Badge>
-          ) : (
-            <Badge className="h-5 rounded-full px-2 text-[11px] font-bold">
-              {request.targetClass ?? "Toutes classes"}
-            </Badge>
-          )}
+          <HelpRequestTargetBadge request={request} />
           <span className="text-xs text-muted-foreground">
             {request.server}
           </span>
@@ -60,14 +50,33 @@ export function MyHelpRequestCard({ request }: MyHelpRequestCardProps) {
         <HelpRequestStatusBadge status={request.status} />
       </div>
 
+      {request.status !== "OPEN" && request.status !== "EXPIRED" ? (
+        <div className="flex flex-col gap-2">
+          <HelpRequestContact
+            label="Moi"
+            characterName={request.requesterCharacterName}
+            characterClass={request.requesterCharacterClass}
+            characterLevel={request.requesterCharacterLevel}
+          />
+          <HelpRequestContact
+            label="Aidant"
+            characterName={request.helperCharacterName}
+            characterClass={request.helperCharacterClass}
+            characterLevel={request.helperCharacterLevel}
+            jobName={request.helperJobName}
+            jobLevel={request.helperJobLevel}
+          />
+        </div>
+      ) : null}
+
       {request.status === "DISPUTED" && request.disputeReason ? (
-        <p className="mb-2 text-[13px] text-destructive">
+        <p className="mt-2 text-[13px] text-destructive">
           Motif : {request.disputeReason}
         </p>
       ) : null}
 
       {request.status === "ACCEPTED" ? (
-        <div className="flex gap-2">
+        <div className="mt-2 flex gap-2">
           <DisputeDialog requestId={request.id} />
           <Button
             size="sm"
@@ -79,6 +88,13 @@ export function MyHelpRequestCard({ request }: MyHelpRequestCardProps) {
             Valider
           </Button>
         </div>
+      ) : null}
+
+      {request.helperCharacterName ? (
+        <CopyCommandButton
+          characterName={request.helperCharacterName}
+          className="mt-2"
+        />
       ) : null}
     </div>
   )

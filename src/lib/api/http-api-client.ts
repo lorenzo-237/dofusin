@@ -216,6 +216,7 @@ export class HttpApiClient implements ApiClient {
       server: filters.server,
       job: filters.job,
     })
+    if (filters.minLevel) params.set("minLevel", filters.minLevel)
     return request<JobSearchResult[]>(`/job-helpers?${params.toString()}`)
   }
 

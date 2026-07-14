@@ -15,7 +15,8 @@ export interface Character {
   name: string
   server: string
   class: string
-  level: string
+  // 1-200 (Dofus level range).
+  level: number
 }
 
 export type CharacterInput = Pick<
@@ -34,7 +35,8 @@ export interface Job {
   server: string
   characterId: string
   job: string
-  level: string
+  // 1-200, same range as Character.level.
+  level: number
 }
 
 export type JobInput = Pick<Job, "server" | "characterId" | "job" | "level">
@@ -102,6 +104,7 @@ export interface JobSearchResult {
 export interface JobSearchFilters {
   server: string
   job: string
+  minLevel: string
 }
 
 // "Recherche intelligente" broadcast: a requester asks for a character
@@ -109,7 +112,15 @@ export interface JobSearchFilters {
 // currently-available matching character/job gets notified live over
 // WebSocket (see src/lib/ws-client.ts) — this shape is what both the
 // REST catch-up routes and the WS `help-request:*` events carry.
-export type HelpRequestStatus = "OPEN" | "ACCEPTED" | "VALIDATED" | "DISPUTED"
+export type HelpRequestStatus =
+  | "OPEN"
+  | "ACCEPTED"
+  | "VALIDATED"
+  | "DISPUTED"
+  // An OPEN request nobody accepted within the expiry window — lazily
+  // swept server-side (see dofusin-api/src/routes/help-requests.ts), not a
+  // status the frontend ever sets itself.
+  | "EXPIRED"
 
 export interface HelpRequest {
   id: string
@@ -118,10 +129,29 @@ export interface HelpRequest {
   targetType: "character" | "job"
   targetClass: string | null
   targetJob: string | null
+  // Applies regardless of targetType — null = no minimum.
+  targetMinLevel: number | null
+  // Which of the requester's own characters to whisper/be whispered by —
+  // required regardless of targetType, since neither side otherwise has any
+  // way to know who to contact in-game.
+  requesterCharacterId: string
+  requesterCharacterName: string
+  requesterCharacterClass: string
+  requesterCharacterLevel: number
   status: HelpRequestStatus
   helperId: string | null
   helperCharacterId: string | null
   helperJobId: string | null
+  // Contact card for whoever accepted — null until then. helperCharacter*
+  // is set for character-type accepts; helperJobName/Level (plus
+  // helperCharacterName, resolved from the job's own representative
+  // character) for job-type accepts — helperCharacterClass/Level stay null
+  // in that case since a Job has no class of its own.
+  helperCharacterName: string | null
+  helperCharacterClass: string | null
+  helperCharacterLevel: number | null
+  helperJobName: string | null
+  helperJobLevel: number | null
   acceptedAt: string | null
   disputeReason: string | null
   resolvedAt: string | null
@@ -129,8 +159,20 @@ export interface HelpRequest {
 }
 
 export type HelpRequestInput =
-  | { targetType: "character"; server: string; targetClass?: string | null }
-  | { targetType: "job"; server: string; targetJob: string }
+  | {
+      targetType: "character"
+      server: string
+      targetClass?: string | null
+      targetMinLevel?: number | null
+      requesterCharacterId: string
+    }
+  | {
+      targetType: "job"
+      server: string
+      targetJob: string
+      targetMinLevel?: number | null
+      requesterCharacterId: string
+    }
 
 // Which of the accepting/declining side's characters or jobs is doing the
 // helping — must match the request's own targetType.

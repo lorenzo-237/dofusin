@@ -18,7 +18,7 @@ export function CharacterAvailabilityList({
   onFieldChange,
 }: CharacterAvailabilityListProps) {
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {characters.map((character) => (
         <CharacterAvailabilityCard
           key={character.id}

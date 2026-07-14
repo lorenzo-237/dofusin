@@ -111,6 +111,15 @@ interface AuthContextValue {
   ) => Promise<void>
   validateHelpRequest: (id: string) => Promise<void>
   disputeHelpRequest: (id: string, reason: string) => Promise<void>
+
+  // The request just accepted via acceptHelpRequest, so the Entraide screen
+  // can auto-open the whisper-message dialog with the requester's contact
+  // info — kept at this (route-independent) level rather than in the
+  // incoming-request card itself, since that card unmounts the instant the
+  // accepted request leaves incomingHelpRequests (same render pass as the
+  // accept), before any local "just accepted" state could ever paint.
+  lastAcceptedHelpRequest: HelpRequest | null
+  clearLastAcceptedHelpRequest: () => void
 }
 
 const AuthContext = React.createContext<AuthContextValue | undefined>(
@@ -141,6 +150,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [acceptedHelpRequests, setAcceptedHelpRequests] = React.useState<
     HelpRequest[]
   >([])
+  const [lastAcceptedHelpRequest, setLastAcceptedHelpRequest] =
+    React.useState<HelpRequest | null>(null)
 
   const token = session?.token ?? null
   // Derived (not synced via effect setState) so it naturally reads false
@@ -396,6 +407,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setIncomingHelpRequests([])
     setMyHelpRequests([])
     setAcceptedHelpRequests([])
+    setLastAcceptedHelpRequest(null)
   }, [])
 
   const requireToken = React.useCallback(() => {
@@ -560,9 +572,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       )
       setIncomingHelpRequests((prev) => prev.filter((r) => r.id !== id))
       setAcceptedHelpRequests((prev) => [helpRequest, ...prev])
+      setLastAcceptedHelpRequest(helpRequest)
     },
     [requireToken]
   )
+
+  const clearLastAcceptedHelpRequest = React.useCallback(() => {
+    setLastAcceptedHelpRequest(null)
+  }, [])
 
   const declineHelpRequestAndGoUnavailable = React.useCallback(
     async (id: string, responder: HelpRequestResponder) => {
@@ -657,6 +674,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       declineHelpRequestAndGoUnavailable,
       validateHelpRequest,
       disputeHelpRequest,
+      lastAcceptedHelpRequest,
+      clearLastAcceptedHelpRequest,
     }),
     [
       session,
@@ -690,6 +709,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       declineHelpRequestAndGoUnavailable,
       validateHelpRequest,
       disputeHelpRequest,
+      lastAcceptedHelpRequest,
+      clearLastAcceptedHelpRequest,
     ]
   )
 

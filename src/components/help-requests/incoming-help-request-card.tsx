@@ -2,12 +2,12 @@ import * as React from "react"
 import { Check, UserX, X } from "lucide-react"
 import { toast } from "sonner"
 
+import { HelpRequestTargetBadge } from "@/components/help-requests/help-request-target-badge"
 import { CharacterCheckboxGroup } from "@/components/shared/character-checkbox-group"
-import { Badge } from "@/components/ui/badge"
+import { ClassIcon } from "@/components/shared/class-avatar"
 import { Button } from "@/components/ui/button"
 import { useAuth } from "@/context/auth-context"
 import { ApiError } from "@/lib/api"
-import { jobColor } from "@/lib/game-data"
 import type { HelpRequest, HelpRequestResponder } from "@/lib/types"
 
 interface IncomingHelpRequestCardProps {
@@ -15,9 +15,10 @@ interface IncomingHelpRequestCardProps {
 }
 
 /**
- * A HelpRequest carries only requesterId (no username — see
- * HelpRequest in lib/types.ts), so this shows what's being asked for
- * (server + class/job criteria) rather than who's asking.
+ * requesterCharacterId (see HelpRequest in lib/types.ts) means we now know
+ * exactly who's asking, not just the server + class/job criteria — shown
+ * as a proper character header (avatar, name, level) instead of a generic
+ * "quelqu'un cherche de l'aide" line.
  */
 export function IncomingHelpRequestCard({
   request,
@@ -98,24 +99,24 @@ export function IncomingHelpRequestCard({
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-2 flex items-center gap-2">
-        {request.targetType === "job" ? (
-          <Badge
-            style={{ backgroundColor: jobColor(request.targetJob ?? "") }}
-            className="h-5 rounded-full px-2 text-[11px] font-bold text-white"
-          >
-            {request.targetJob}
-          </Badge>
-        ) : (
-          <Badge className="h-5 rounded-full px-2 text-[11px] font-bold">
-            {request.targetClass ?? "Toutes classes"}
-          </Badge>
-        )}
+        <HelpRequestTargetBadge request={request} />
         <span className="text-xs text-muted-foreground">{request.server}</span>
       </div>
 
-      <p className="mb-3 text-[13px] font-semibold">
-        Quelqu'un cherche de l'aide.
-      </p>
+      <div className="mb-3 flex items-center gap-2.5">
+        <ClassIcon
+          characterClass={request.requesterCharacterClass}
+          className="size-9"
+        />
+        <div>
+          <div className="text-sm font-bold">
+            {request.requesterCharacterName}
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            Niv. {request.requesterCharacterLevel} · cherche de l'aide
+          </div>
+        </div>
+      </div>
 
       {request.targetType === "character" && matchingCharacters.length > 1 ? (
         <CharacterCheckboxGroup

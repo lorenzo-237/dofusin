@@ -20,33 +20,29 @@ export function CharacterAvailabilityCard({
   const isOn = availability != null
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-2.5 flex items-center gap-2.5">
+    <div className="rounded-2xl border border-border bg-card p-3">
+      <div className="flex items-center gap-2.5">
         <ClassAvatar
           name={character.name}
           characterClass={character.class}
           size="sm"
         />
-        <div className="flex-1">
-          <div className="text-sm font-bold">{character.name}</div>
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
+        <div className="min-w-0 flex-1">
+          <div className="truncate text-sm font-bold">{character.name}</div>
+          <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
             <span>{character.server} ·</span>
-            <ClassIcon characterClass={character.class} />
+            <ClassIcon characterClass={character.class} className="size-3" />
             <span>
               {character.class}
               {character.level ? ` · N${character.level}` : ""}
             </span>
           </div>
         </div>
-      </div>
-
-      <div className="mb-2.5 flex items-center justify-between">
-        <span className="text-[13px] font-bold">Disponible pour une quête</span>
         <Switch checked={isOn} onCheckedChange={onToggle} />
       </div>
 
       {isOn ? (
-        <div className="flex flex-col gap-2 border-t border-border pt-2">
+        <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
           <div className="flex gap-3.5">
             <button
               type="button"

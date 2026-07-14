@@ -7,6 +7,7 @@ const STATUS_LABELS: Record<HelpRequestStatus, string> = {
   ACCEPTED: "Accepté",
   VALIDATED: "Validé",
   DISPUTED: "Litige",
+  EXPIRED: "Expirée",
 }
 
 const STATUS_CLASSES: Record<HelpRequestStatus, string> = {
@@ -14,6 +15,7 @@ const STATUS_CLASSES: Record<HelpRequestStatus, string> = {
   ACCEPTED: "bg-accent/15 text-accent",
   VALIDATED: "bg-primary/15 text-primary",
   DISPUTED: "bg-destructive/15 text-destructive",
+  EXPIRED: "bg-muted text-muted-foreground",
 }
 
 export function HelpRequestStatusBadge({

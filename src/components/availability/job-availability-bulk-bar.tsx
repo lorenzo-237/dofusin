@@ -30,33 +30,30 @@ export function JobAvailabilityBulkBar({
   if (characters.length === 0) return null
 
   return (
-    <div className="mb-3 flex flex-col gap-2.5 rounded-2xl border border-primary/30 bg-primary/5 p-3.5">
-      <div className="flex items-center gap-1.5 text-primary">
-        <SlidersHorizontal className="size-3.5" />
-        <span className="text-[11px] font-bold tracking-wide uppercase">
-          Actions globales
-        </span>
-      </div>
+    <div className="mb-2.5 flex flex-col gap-2 rounded-2xl border border-primary/30 bg-primary/5 p-2.5">
       <div className="flex items-center justify-between">
-        <span className="text-[13px] font-bold">Tous les métiers dispo</span>
+        <div className="flex items-center gap-1.5 text-primary">
+          <SlidersHorizontal className="size-3.5" />
+          <span className="text-[13px] font-bold">Tous les métiers dispo</span>
+        </div>
         <Switch checked={allOn} onCheckedChange={onToggleAll} />
       </div>
       <div>
-        <div className="mb-1.5 text-xs font-semibold text-muted-foreground">
+        <div className="mb-1.5 text-[11px] font-semibold text-muted-foreground">
           Affecter un personnage à tous les métiers
         </div>
         <CharacterCheckboxGroup
           value={selectedCharacterId}
           onValueChange={setSelectedCharacterId}
           characters={characters}
-          className="mb-2"
+          className="mb-1.5"
         />
         <Button
           type="button"
           size="sm"
           disabled={!selectedCharacterId}
           onClick={() => onAssignCharacterToAll(selectedCharacterId)}
-          className="h-auto w-full rounded-xl py-2.5 font-bold"
+          className="h-auto w-full rounded-xl py-2 font-bold"
         >
           Appliquer
         </Button>

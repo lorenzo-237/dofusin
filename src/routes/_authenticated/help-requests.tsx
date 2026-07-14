@@ -3,8 +3,10 @@ import { createFileRoute } from "@tanstack/react-router"
 import { CreateHelpRequestCard } from "@/components/help-requests/create-help-request-card"
 import { IncomingHelpRequestList } from "@/components/help-requests/incoming-help-request-list"
 import { MyResponseList } from "@/components/help-requests/my-response-list"
+import { CopyCommandButton } from "@/components/shared/copy-command-button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAuth } from "@/context/auth-context"
+import { buildHelperIntroMessage } from "@/lib/help-request-message"
 
 export type HelpRequestsTab = "create" | "incoming" | "mine"
 
@@ -25,8 +27,15 @@ export const Route = createFileRoute("/_authenticated/help-requests")({
 })
 
 function HelpRequestsScreen() {
-  const { incomingHelpRequests, myHelpRequests, acceptedHelpRequests } =
-    useAuth()
+  const {
+    incomingHelpRequests,
+    myHelpRequests,
+    acceptedHelpRequests,
+    availabilities,
+    jobAvailabilities,
+    lastAcceptedHelpRequest,
+    clearLastAcceptedHelpRequest,
+  } = useAuth()
   const { tab } = Route.useSearch()
 
   return (
@@ -67,6 +76,26 @@ function HelpRequestsScreen() {
           />
         </TabsContent>
       </Tabs>
+
+      {/* Auto-opens right after accepting a request from "Reçues" — lives
+          here (route level) rather than in the incoming-request card, which
+          unmounts the instant the accepted request leaves
+          incomingHelpRequests (same render pass as the accept). No visible
+          trigger button (isControlled), the dialog itself is the whole UI. */}
+      {lastAcceptedHelpRequest ? (
+        <CopyCommandButton
+          characterName={lastAcceptedHelpRequest.requesterCharacterName}
+          {...buildHelperIntroMessage(
+            lastAcceptedHelpRequest,
+            availabilities,
+            jobAvailabilities
+          )}
+          open={lastAcceptedHelpRequest !== null}
+          onOpenChange={(open) => {
+            if (!open) clearLastAcceptedHelpRequest()
+          }}
+        />
+      ) : null}
     </div>
   )
 }

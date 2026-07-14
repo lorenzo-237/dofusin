@@ -44,7 +44,7 @@ export function ReactivateBanner() {
   }
 
   return (
-    <div className="mb-5.5 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3.5 py-3.5">
+    <div className="mb-3 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3.5 py-2.5">
       <div className="flex-1 text-[13px] font-semibold">
         Tu étais disponible avec {parts.join(" et ")}. Tout réactiver ?
       </div>
@@ -52,7 +52,7 @@ export function ReactivateBanner() {
         size="sm"
         disabled={isReactivating}
         onClick={() => void handleReactivate()}
-        className="h-auto shrink-0 gap-1.5 rounded-xl py-2.5 font-bold"
+        className="h-auto shrink-0 gap-1.5 rounded-xl py-2 font-bold"
       >
         <RotateCcw className="size-3.5" />
         {isReactivating ? "..." : "Réactiver"}

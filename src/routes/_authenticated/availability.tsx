@@ -134,17 +134,17 @@ function AvailabilityScreen() {
 
   return (
     <div className="pt-1">
-      <p className="mb-3 text-[13px] text-muted-foreground">
+      <p className="mb-2 text-[13px] text-muted-foreground">
         Valable aujourd'hui seulement.
       </p>
       <ServerSelect
         value={server}
         onValueChange={handleServerChange}
-        className="mb-4 h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
+        className="mb-3 h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
       />
 
       <Tabs defaultValue="characters">
-        <TabsList className="mb-4 w-full">
+        <TabsList className="mb-3 w-full">
           <TabsTrigger value="characters" className="flex-1">
             Personnages
           </TabsTrigger>

@@ -33,12 +33,17 @@ export function RegisterCharacterForm({
       setError("Le nom du personnage est requis.")
       return
     }
+    const parsedLevel = Number(level.trim())
+    if (!Number.isInteger(parsedLevel) || parsedLevel < 1 || parsedLevel > 200) {
+      setError("Le niveau doit être un nombre entier entre 1 et 200.")
+      return
+    }
     setError("")
     onSubmit({
       name: name.trim(),
       server,
       class: characterClass,
-      level: level.trim(),
+      level: parsedLevel,
     })
   }
 
@@ -65,9 +70,13 @@ export function RegisterCharacterForm({
         className="h-auto w-full rounded-xl px-3.5 py-3.5 text-base"
       />
       <Input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={200}
         value={level}
         onChange={(event) => setLevel(event.target.value)}
-        placeholder="Niveau"
+        placeholder="Niveau (1-200)"
         aria-label="Niveau"
         className="h-auto rounded-xl px-3.5 py-3.5 text-base"
       />

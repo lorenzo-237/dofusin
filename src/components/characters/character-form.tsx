@@ -33,7 +33,9 @@ export function CharacterForm({
   const [characterClass, setCharacterClass] = React.useState(
     editingCharacter?.class ?? CLASSES[0]
   )
-  const [level, setLevel] = React.useState(editingCharacter?.level ?? "")
+  const [level, setLevel] = React.useState(
+    editingCharacter ? String(editingCharacter.level) : ""
+  )
   const [error, setError] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -43,6 +45,11 @@ export function CharacterForm({
       setError("Le nom du personnage est requis.")
       return
     }
+    const parsedLevel = Number(level.trim())
+    if (!Number.isInteger(parsedLevel) || parsedLevel < 1 || parsedLevel > 200) {
+      setError("Le niveau doit être un nombre entier entre 1 et 200.")
+      return
+    }
     setError("")
     setIsSubmitting(true)
     try {
@@ -50,7 +57,7 @@ export function CharacterForm({
         name: name.trim(),
         server,
         class: characterClass,
-        level: level.trim(),
+        level: parsedLevel,
       })
       if (!editingCharacter) {
         setName("")
@@ -86,9 +93,13 @@ export function CharacterForm({
           className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         <Input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={200}
           value={level}
           onChange={(event) => setLevel(event.target.value)}
-          placeholder="Niveau"
+          placeholder="Niveau (1-200)"
           aria-label="Niveau"
           className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
         />

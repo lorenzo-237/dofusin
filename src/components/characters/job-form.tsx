@@ -41,7 +41,9 @@ export function JobForm({
   const [job, setJob] = React.useState<string>(
     editingJob?.job ?? getLastJob()
   )
-  const [level, setLevel] = React.useState(editingJob?.level ?? "")
+  const [level, setLevel] = React.useState(
+    editingJob ? String(editingJob.level) : ""
+  )
   const [error, setError] = React.useState("")
   const [isSubmitting, setIsSubmitting] = React.useState(false)
 
@@ -51,14 +53,15 @@ export function JobForm({
       setError("Choisis un personnage.")
       return
     }
-    if (!level.trim()) {
-      setError("Le niveau est requis.")
+    const parsedLevel = Number(level.trim())
+    if (!Number.isInteger(parsedLevel) || parsedLevel < 1 || parsedLevel > 200) {
+      setError("Le niveau doit être un nombre entier entre 1 et 200.")
       return
     }
     setError("")
     setIsSubmitting(true)
     try {
-      await onSubmit({ server, characterId, job, level: level.trim() })
+      await onSubmit({ server, characterId, job, level: parsedLevel })
       if (!editingJob) {
         setLevel("")
       }
@@ -93,9 +96,13 @@ export function JobForm({
           className="h-auto w-full rounded-xl bg-muted px-3 py-3 text-[15px]"
         />
         <Input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={200}
           value={level}
           onChange={(event) => setLevel(event.target.value)}
-          placeholder="Niveau"
+          placeholder="Niveau (1-200)"
           aria-label="Niveau"
           className="h-auto rounded-xl bg-muted px-3 py-3 text-[15px]"
         />

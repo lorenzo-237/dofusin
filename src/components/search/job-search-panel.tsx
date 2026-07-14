@@ -19,6 +19,7 @@ export function JobSearchPanel() {
   const [filters, setFilters] = React.useState<JobSearchFilters>({
     server: getLastServer(),
     job: getLastJob(),
+    minLevel: "",
   })
   const [results, setResults] = React.useState<JobSearchResult[]>([])
   const [isPending, startTransition] = React.useTransition()

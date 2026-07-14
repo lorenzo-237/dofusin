@@ -1,4 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { LifeBuoy } from "lucide-react"
 
 import { ReactivateBanner } from "@/components/home/reactivate-banner"
 import { StatCard } from "@/components/home/stat-card"
@@ -18,13 +19,13 @@ function HomeScreen() {
 
   return (
     <div className="pt-1">
-      <p className="mb-4.5 text-sm text-muted-foreground">
+      <p className="mb-3 text-sm text-muted-foreground">
         Salut {user?.username}, voici ta journée.
       </p>
 
       <ReactivateBanner />
 
-      <div className="mb-5.5 flex gap-2.5">
+      <div className="mb-3 flex divide-x divide-border rounded-2xl border border-border bg-card">
         <StatCard label="Personnages" value={characters.length} accent="primary" />
         <StatCard
           label="Perso dispo"
@@ -39,13 +40,14 @@ function HomeScreen() {
       </div>
 
       <Button
-        onClick={() => navigate({ to: "/search" })}
-        className="mb-5.5 h-auto w-full rounded-2xl bg-accent py-3.5 font-heading text-[15px] font-bold text-white hover:bg-accent/90"
+        onClick={() => navigate({ to: "/help-requests" })}
+        className="mb-3 h-auto w-full gap-1.5 rounded-2xl bg-accent py-2.5 font-heading text-[15px] font-bold text-white hover:bg-accent/90"
       >
-        Chercher de l'aide
+        <LifeBuoy className="size-4" />
+        Entraide
       </Button>
 
-      <div className="mb-2.5 font-heading text-[15px] font-bold">
+      <div className="mb-2 font-heading text-[15px] font-bold">
         Mes dispos du jour
       </div>
       <TodaysAvailabilityList

@@ -31,33 +31,30 @@ export function JobAvailabilityCard({
   const isOn = availability != null
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4">
-      <div className="mb-2.5 flex items-center gap-2.5">
-        <Badge
-          style={{ backgroundColor: jobColor(job.job) }}
-          className="h-5 rounded-full px-2 text-[11px] font-bold text-white"
-        >
-          {job.job}
-        </Badge>
-        <div className="text-xs text-muted-foreground">
-          {job.server} · Niveau {job.level}
+    <div className="rounded-2xl border border-border bg-card p-3">
+      <div className="mb-2 flex items-center justify-between gap-2.5">
+        <div className="flex min-w-0 items-center gap-2">
+          <Badge
+            style={{ backgroundColor: jobColor(job.job) }}
+            className="h-5 shrink-0 rounded-full px-2 text-[11px] font-bold text-white"
+          >
+            {job.job}
+          </Badge>
+          <span className="truncate text-[11px] text-muted-foreground">
+            {job.server} · N{job.level}
+          </span>
         </div>
+        <Switch checked={isOn} onCheckedChange={onToggle} />
       </div>
 
       <CharacterCheckboxGroup
         value={job.characterId}
         onValueChange={onCharacterChange}
         characters={characters}
-        className="mb-2.5"
       />
 
-      <div className="mb-2.5 flex items-center justify-between">
-        <span className="text-[13px] font-bold">Disponible pour du craft</span>
-        <Switch checked={isOn} onCheckedChange={onToggle} />
-      </div>
-
       {isOn ? (
-        <div className="flex flex-col gap-2 border-t border-border pt-2">
+        <div className="mt-2 flex flex-col gap-1.5 border-t border-border pt-2">
           <div className="flex gap-3.5">
             <button
               type="button"

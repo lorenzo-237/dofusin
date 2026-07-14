@@ -1,5 +1,6 @@
 import { JobSelect } from "@/components/shared/job-select"
 import { ServerSelect } from "@/components/shared/server-select"
+import { Input } from "@/components/ui/input"
 import type { JobSearchFilters } from "@/lib/types"
 
 interface JobSearchFiltersCardProps {
@@ -22,6 +23,13 @@ export function JobSearchFiltersCard({
         value={filters.job}
         onValueChange={(job) => onChange({ job })}
         className="h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
+      />
+      <Input
+        value={filters.minLevel}
+        onChange={(event) => onChange({ minLevel: event.target.value })}
+        placeholder="Niveau min"
+        aria-label="Niveau min"
+        className="h-auto rounded-xl bg-muted px-2.5 py-2.5 text-sm"
       />
     </div>
   )

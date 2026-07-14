@@ -2,11 +2,14 @@ import * as React from "react"
 import { Megaphone } from "lucide-react"
 import { toast } from "sonner"
 
+import { CharacterSelect } from "@/components/shared/character-select"
 import { ClassSelect } from "@/components/shared/class-select"
 import { JobSelect } from "@/components/shared/job-select"
 import { ServerSelect } from "@/components/shared/server-select"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { useAuth } from "@/context/auth-context"
+import { ApiError } from "@/lib/api"
 import {
   getLastJob,
   getLastServer,
@@ -27,19 +30,32 @@ const TARGET_TYPES: { value: TargetType; label: string }[] = [
  * classic Recherche filters (server + optional class, or server + job), but
  * instead of just listing who's available, it broadcasts a HelpRequest live
  * to every matching account currently marked available (see
- * docs/help-requests.md in dofusin-api).
+ * docs/help-requests.md in dofusin-api). Also requires picking one of the
+ * requester's own characters on that server — whoever accepts needs to know
+ * who to whisper in-game, and there's otherwise no way to know.
  */
 export function CreateHelpRequestCard() {
-  const { createHelpRequest } = useAuth()
+  const { characters, createHelpRequest } = useAuth()
   const [targetType, setTargetType] = React.useState<TargetType>("character")
   const [server, setServer] = React.useState(getLastServer())
   const [targetClass, setTargetClass] = React.useState("")
   const [targetJob, setTargetJob] = React.useState(getLastJob())
+  const [targetMinLevel, setTargetMinLevel] = React.useState("")
+  const [requesterCharacterId, setRequesterCharacterId] = React.useState(
+    () => characters.find((c) => c.server === getLastServer())?.id ?? ""
+  )
   const [isSending, setIsSending] = React.useState(false)
+  const [error, setError] = React.useState("")
 
+  const serverCharacters = characters.filter((c) => c.server === server)
+
+  // Reset the pick whenever the server changes so it can't silently keep
+  // pointing at a character from the previous server.
   const handleServerChange = (next: string) => {
     setServer(next)
     setLastServer(next)
+    const firstOnServer = characters.find((c) => c.server === next)
+    setRequesterCharacterId(firstOnServer?.id ?? "")
   }
 
   const handleJobChange = (next: string) => {
@@ -48,17 +64,48 @@ export function CreateHelpRequestCard() {
   }
 
   const handleSubmit = async () => {
+    if (!requesterCharacterId) return
+
+    let parsedMinLevel: number | null = null
+    if (targetMinLevel.trim()) {
+      parsedMinLevel = Number(targetMinLevel.trim())
+      if (
+        !Number.isInteger(parsedMinLevel) ||
+        parsedMinLevel < 1 ||
+        parsedMinLevel > 200
+      ) {
+        setError("Le niveau minimum doit être un nombre entier entre 1 et 200.")
+        return
+      }
+    }
+
+    setError("")
     setIsSending(true)
     try {
       await createHelpRequest(
         targetType === "character"
-          ? { targetType, server, targetClass: targetClass || null }
-          : { targetType, server, targetJob }
+          ? {
+              targetType,
+              server,
+              targetClass: targetClass || null,
+              targetMinLevel: parsedMinLevel,
+              requesterCharacterId,
+            }
+          : {
+              targetType,
+              server,
+              targetJob,
+              targetMinLevel: parsedMinLevel,
+              requesterCharacterId,
+            }
       )
       toast.success("Demande envoyée à tous les aidants disponibles !")
       setTargetClass("")
-    } catch {
-      toast.error("Impossible d'envoyer la demande, réessaie.")
+      setTargetMinLevel("")
+    } catch (err) {
+      toast.error(
+        err instanceof ApiError ? err.message : "Impossible d'envoyer la demande, réessaie."
+      )
     } finally {
       setIsSending(false)
     }
@@ -111,8 +158,43 @@ export function CreateHelpRequestCard() {
         />
       )}
 
+      <Input
+        type="number"
+        inputMode="numeric"
+        min={1}
+        max={200}
+        value={targetMinLevel}
+        onChange={(event) => setTargetMinLevel(event.target.value)}
+        placeholder="Niveau min (optionnel)"
+        aria-label="Niveau min"
+        className="h-auto rounded-xl bg-muted px-2.5 py-2.5 text-sm"
+      />
+
+      {error ? (
+        <p className="text-[13px] font-semibold text-destructive">{error}</p>
+      ) : null}
+
+      {serverCharacters.length > 0 ? (
+        <div className="flex flex-col gap-1.5">
+          <span className="text-[13px] font-semibold text-muted-foreground">
+            Qui contacter si quelqu'un répond ?
+          </span>
+          <CharacterSelect
+            value={requesterCharacterId}
+            onValueChange={setRequesterCharacterId}
+            characters={serverCharacters}
+            className="h-auto w-full rounded-xl bg-muted px-2.5 py-2.5 text-sm"
+          />
+        </div>
+      ) : (
+        <p className="text-[13px] text-destructive">
+          Ajoute d'abord un personnage sur ce serveur pour pouvoir demander de
+          l'aide (menu ☰ → Mes personnages).
+        </p>
+      )}
+
       <Button
-        disabled={isSending}
+        disabled={isSending || !requesterCharacterId}
         onClick={() => void handleSubmit()}
         className="h-auto gap-1.5 rounded-xl py-3 font-heading text-[15px] font-bold"
       >

@@ -385,13 +385,13 @@ export class MockApiClient implements ApiClient {
             (j) =>
               j.userId === character.userId && j.server === character.server
           )
-          .map((j) => ({ job: j.job, level: Number(j.level) || 0 }))
+          .map((j) => ({ job: j.job, level: j.level }))
         return {
           id: character.id,
           name: character.name,
           server: character.server,
           class: character.class,
-          level: Number(character.level) || 0,
+          level: character.level,
           price: a.free ? 0 : Number(a.price) || 0,
           jobs,
         } satisfies HelperSearchResult
@@ -425,12 +425,12 @@ export class MockApiClient implements ApiClient {
         return {
           id: job.id,
           job: job.job,
-          level: Number(job.level) || 0,
+          level: job.level,
           price: a.free ? 0 : Number(a.price) || 0,
           server: job.server,
           characterName: character.name,
           characterClass: character.class,
-          characterLevel: Number(character.level) || 0,
+          characterLevel: character.level,
         } satisfies JobSearchResult
       })
       .filter((h): h is JobSearchResult => h !== null)
@@ -438,7 +438,10 @@ export class MockApiClient implements ApiClient {
     const pool = [...MOCK_JOB_HELPERS_POOL, ...liveJobHelpers]
 
     return pool.filter(
-      (h) => h.server === filters.server && h.job === filters.job
+      (h) =>
+        h.server === filters.server &&
+        h.job === filters.job &&
+        (!filters.minLevel || h.level >= Number(filters.minLevel))
     )
   }
 
@@ -449,6 +452,11 @@ export class MockApiClient implements ApiClient {
     await delay()
     const db = loadDb()
     const requesterId = this.resolveUserId(db, token)
+    const requesterCharacter = this.assertOwnedCharacter(
+      db,
+      requesterId,
+      input.requesterCharacterId
+    )
 
     const helpRequest: HelpRequest = {
       id: generateId(),
@@ -458,10 +466,20 @@ export class MockApiClient implements ApiClient {
       targetClass:
         input.targetType === "character" ? (input.targetClass ?? null) : null,
       targetJob: input.targetType === "job" ? input.targetJob : null,
+      targetMinLevel: input.targetMinLevel ?? null,
+      requesterCharacterId: requesterCharacter.id,
+      requesterCharacterName: requesterCharacter.name,
+      requesterCharacterClass: requesterCharacter.class,
+      requesterCharacterLevel: requesterCharacter.level,
       status: "OPEN",
       helperId: null,
       helperCharacterId: null,
       helperJobId: null,
+      helperCharacterName: null,
+      helperCharacterClass: null,
+      helperCharacterLevel: null,
+      helperJobName: null,
+      helperJobLevel: null,
       acceptedAt: null,
       disputeReason: null,
       resolvedAt: null,
@@ -533,9 +551,16 @@ export class MockApiClient implements ApiClient {
         responder.characterId
       )
       helpRequest.helperCharacterId = character.id
+      helpRequest.helperCharacterName = character.name
+      helpRequest.helperCharacterClass = character.class
+      helpRequest.helperCharacterLevel = character.level
     } else {
       const job = this.assertOwnedJob(db, userId, responder.jobId)
       helpRequest.helperJobId = job.id
+      helpRequest.helperJobName = job.job
+      helpRequest.helperJobLevel = job.level
+      helpRequest.helperCharacterName =
+        db.characters.find((c) => c.id === job.characterId)?.name ?? null
     }
 
     helpRequest.status = "ACCEPTED"

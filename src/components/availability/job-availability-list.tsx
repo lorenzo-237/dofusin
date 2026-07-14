@@ -24,7 +24,7 @@ export function JobAvailabilityList({
   const sortedJobs = [...jobs].sort((a, b) => a.job.localeCompare(b.job, "fr"))
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-2">
       {sortedJobs.map((job) => (
         <JobAvailabilityCard
           key={job.id}

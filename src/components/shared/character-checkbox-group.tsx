@@ -1,5 +1,6 @@
 import { Check } from "lucide-react"
 
+import { ClassIcon } from "@/components/shared/class-avatar"
 import { cn } from "@/lib/utils"
 import type { Character } from "@/lib/types"
 
@@ -43,6 +44,7 @@ export function CharacterCheckboxGroup({
             ) : (
               <span className="size-3 rounded-sm border border-current" />
             )}
+            <ClassIcon characterClass={character.class} className="size-3.5" />
             {character.name}
           </button>
         )

@@ -1,6 +1,9 @@
+import { HelpRequestContact } from "@/components/help-requests/help-request-contact"
 import { HelpRequestStatusBadge } from "@/components/help-requests/help-request-status-badge"
-import { Badge } from "@/components/ui/badge"
-import { jobColor } from "@/lib/game-data"
+import { HelpRequestTargetBadge } from "@/components/help-requests/help-request-target-badge"
+import { CopyCommandButton } from "@/components/shared/copy-command-button"
+import { useAuth } from "@/context/auth-context"
+import { buildHelperIntroMessage } from "@/lib/help-request-message"
 import type { HelpRequest } from "@/lib/types"
 
 interface AcceptedHelpRequestCardProps {
@@ -11,6 +14,13 @@ interface AcceptedHelpRequestCardProps {
 export function AcceptedHelpRequestCard({
   request,
 }: AcceptedHelpRequestCardProps) {
+  const { availabilities, jobAvailabilities } = useAuth()
+  const { defaultMessage, price } = buildHelperIntroMessage(
+    request,
+    availabilities,
+    jobAvailabilities
+  )
+
   return (
     <div className="rounded-2xl border border-border bg-card p-4">
       <div className="mb-1 text-[10px] font-bold tracking-wide text-accent uppercase">
@@ -18,18 +28,7 @@ export function AcceptedHelpRequestCard({
       </div>
       <div className="mb-2 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          {request.targetType === "job" ? (
-            <Badge
-              style={{ backgroundColor: jobColor(request.targetJob ?? "") }}
-              className="h-5 rounded-full px-2 text-[11px] font-bold text-white"
-            >
-              {request.targetJob}
-            </Badge>
-          ) : (
-            <Badge className="h-5 rounded-full px-2 text-[11px] font-bold">
-              {request.targetClass ?? "Toutes classes"}
-            </Badge>
-          )}
+          <HelpRequestTargetBadge request={request} />
           <span className="text-xs text-muted-foreground">
             {request.server}
           </span>
@@ -37,19 +36,43 @@ export function AcceptedHelpRequestCard({
         <HelpRequestStatusBadge status={request.status} />
       </div>
 
+      <div className="flex flex-col gap-2">
+        <HelpRequestContact
+          label="Moi"
+          characterName={request.helperCharacterName}
+          characterClass={request.helperCharacterClass}
+          characterLevel={request.helperCharacterLevel}
+          jobName={request.helperJobName}
+          jobLevel={request.helperJobLevel}
+        />
+        <HelpRequestContact
+          label="Demandeur"
+          characterName={request.requesterCharacterName}
+          characterClass={request.requesterCharacterClass}
+          characterLevel={request.requesterCharacterLevel}
+        />
+      </div>
+
       {request.status === "DISPUTED" && request.disputeReason ? (
-        <p className="text-[13px] text-destructive">
+        <p className="mt-2 text-[13px] text-destructive">
           Motif : {request.disputeReason}
         </p>
       ) : request.status === "VALIDATED" ? (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="mt-2 text-[13px] text-muted-foreground">
           Merci d'avoir aidé ! +1 xp.
         </p>
       ) : (
-        <p className="text-[13px] text-muted-foreground">
+        <p className="mt-2 text-[13px] text-muted-foreground">
           En attente de validation par le demandeur.
         </p>
       )}
+
+      <CopyCommandButton
+        characterName={request.requesterCharacterName}
+        price={price}
+        defaultMessage={defaultMessage}
+        className="mt-2"
+      />
     </div>
   )
 }

@@ -77,11 +77,11 @@ export function TodaysAvailabilityList({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-1.5">
       {items.map((item) => (
         <div
           key={item.key}
-          className="flex items-center gap-2.5 rounded-2xl border border-border bg-card px-3.5 py-3"
+          className="flex items-center gap-2.5 rounded-xl border border-border bg-card px-3.5 py-2"
         >
           <div
             className="size-2.25 shrink-0 rounded-full"
